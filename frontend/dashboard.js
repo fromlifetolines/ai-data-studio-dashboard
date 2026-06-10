@@ -13,7 +13,7 @@
 /* ────────────────────────────────────────────
    1. 設定
 ──────────────────────────────────────────── */
-const API_BASE = 'http://localhost:8000';  // FastAPI 後端位址，上線後改為正式 domain
+const API_BASE = 'http://127.0.0.1:8000';  // FastAPI 後端位址，上線後改為正式 domain
 
 const DAYS_14 = ['5/26','5/27','5/28','5/29','5/30','5/31','6/1','6/2','6/3','6/4','6/5','6/6','6/7','6/8'];
 
@@ -95,24 +95,24 @@ const MOCK = {
 };
 
 /* ────────────────────────────────────────────
-   3. API 呼叫層（後端完成後取消此區塊的註解）
-──────────────────────────────────────────── */
-/*
+   3. API 呼叫層
+   ──────────────────────────────────────────── */
+let currentData = MOCK;
+
 async function fetchDashboard() {
   setStatus('loading');
   try {
     const res = await fetch(`${API_BASE}/api/dashboard`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+    const result = await res.json();
     setStatus('connected');
-    return data;
+    return result;
   } catch (err) {
     console.error('API fetch failed, using mock data:', err);
     setStatus('error');
     return null;  // fallback to MOCK
   }
 }
-*/
 
 function setStatus(state) {
   const dot = document.getElementById('status-dot');
@@ -528,9 +528,9 @@ function goTab(idx) {
   });
   document.querySelectorAll('.page').forEach((p, i) => p.classList.toggle('on', i === idx));
 
-  if (idx === 1 && !BUILT.p1) { buildGA4(MOCK); BUILT.p1 = true; }
-  if (idx === 2 && !BUILT.p2) { buildSC(MOCK);  BUILT.p2 = true; }
-  if (idx === 3 && !BUILT.p3) { buildAds(MOCK); BUILT.p3 = true; }
+  if (idx === 1 && !BUILT.p1) { buildGA4(currentData); BUILT.p1 = true; }
+  if (idx === 2 && !BUILT.p2) { buildSC(currentData);  BUILT.p2 = true; }
+  if (idx === 3 && !BUILT.p3) { buildAds(currentData); BUILT.p3 = true; }
   if (idx === 4 && !BUILT.p4) { buildOnboarding(); BUILT.p4 = true; }
 }
 
@@ -653,8 +653,14 @@ document.addEventListener('keydown', e => {
 /* ────────────────────────────────────────────
    11. 初始化
 ──────────────────────────────────────────── */
-document.addEventListener('DOMContentLoaded', () => {
-  setStatus('connected'); // 後端完成後改為 loading → connected/error
-  buildOverview(MOCK);
+document.addEventListener('DOMContentLoaded', async () => {
+  setStatus('loading');
+  const apiResult = await fetchDashboard();
+  if (apiResult && apiResult.data) {
+    currentData = apiResult.data;
+  } else {
+    currentData = MOCK;
+  }
+  buildOverview(currentData);
   buildOnboarding();      // Page 4 的靜態內容可以直接建立
 });

@@ -35,14 +35,8 @@ app = FastAPI(
 # ── CORS（允許前端 GitHub Pages 呼叫）────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:5500",
-        "http://127.0.0.1:5500",
-        "https://fromlifetolines.github.io",
-        "*",  # 開發階段先全開，上線後改為指定 domain
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -240,29 +234,85 @@ async def get_dashboard(
             if isinstance(r, Exception):
                 print(f"[WARN] 部分數據撈取失敗：{r}")
 
-        ga4_data = {
-            "overview":        overview        if not isinstance(overview, Exception)        else {},
-            "sessions_trend":  sessions_trend  if not isinstance(sessions_trend, Exception)  else [],
-            "traffic_sources": traffic_sources if not isinstance(traffic_sources, Exception) else [],
-            "top_pages":       top_pages       if not isinstance(top_pages, Exception)       else [],
-            "device":          device          if not isinstance(device, Exception)          else [],
+        # 將 GA4 真實數據映射為前端期待的格式
+        overview_dict = overview if not isinstance(overview, Exception) else {}
+        sessions_delta = overview_dict.get("sessions_delta", "—")
+        users_delta = overview_dict.get("users_delta", "—")
+
+        # 1. KPIs
+        kpis = {
+            "sessions": {
+                "value": f"{overview_dict.get('sessions', 0):,}" if "sessions" in overview_dict else "—",
+                "delta": sessions_delta,
+                "trend": "up" if "+" in sessions_delta else "down" if "-" in sessions_delta else "flat"
+            },
+            "users": {
+                "value": f"{overview_dict.get('users', 0):,}" if "users" in overview_dict else "—",
+                "delta": users_delta,
+                "trend": "up" if "+" in users_delta else "down" if "-" in users_delta else "flat"
+            },
+            "impressions": {"value": "—", "delta": "—", "trend": "flat"},
+            "roas":        {"value": "—", "delta": "—", "trend": "flat"},
         }
+
+        # 2. 每日趨勢
+        trend_dict = sessions_trend if not isinstance(sessions_trend, Exception) else {}
+        s_trend = trend_dict.get("sessions_trend", [])
+        u_trend = trend_dict.get("users_trend", [])
+        nu_trend = trend_dict.get("new_users_trend", [])
+
+        # 3. 流量來源與裝置類型
+        t_sources = traffic_sources if not isinstance(traffic_sources, Exception) else []
+        dev_data = device if not isinstance(device, Exception) else []
+
+        # 4. 熱門網頁
+        pages_data = top_pages if not isinstance(top_pages, Exception) else []
 
         # 生成 AI 洞察
         openai_key = settings.get("openai_key") or os.getenv("OPENAI_API_KEY", "")
         ai_summary = ""
-        if openai_key and ga4_data["overview"]:
+        if openai_key and overview_dict:
             try:
+                # 將 ga4_data 包裝為原 format 以相容 generate_insight 函式
+                temp_ga4_data = {
+                    "overview": overview_dict,
+                    "sessions_trend": trend_dict,
+                    "traffic_sources": t_sources,
+                    "top_pages": pages_data,
+                    "device": dev_data,
+                }
                 ai_summary = await asyncio.to_thread(
-                    generate_insight, ga4_data, openai_key
+                    generate_insight, temp_ga4_data, openai_key
                 )
             except Exception as e:
                 print(f"[WARN] AI 洞察生成失敗：{e}")
                 ai_summary = "AI 分析暫時無法使用，請稍後再試。"
 
+        # 取得 Demo 數據當作其他填寫項目的預設值 (避免 Search Console & Ads 面板在 live 模式下因沒資料而破版/報錯)
+        demo = _get_demo_data()
+
+        data_payload = {
+            "ai_summary": ai_summary or f"已成功串接 GA4 真實數據！工作階段共 {overview_dict.get('sessions', 0):,} 次，不重複用戶 {overview_dict.get('users', 0):,} 位，跳出率 {overview_dict.get('bounce_rate', '—')}。",
+            "kpis": kpis,
+            "sessions_trend": s_trend,
+            "users_trend": u_trend,
+            "new_users_trend": nu_trend,
+            "traffic_source": t_sources,
+            "device": dev_data,
+            "pages": pages_data,
+            "keywords": demo.get("keywords", []),
+            "ssc_imp": demo.get("ssc_imp", []),
+            "ssc_click": demo.get("ssc_click", []),
+            "search_type": demo.get("search_type", []),
+            "channels": demo.get("channels", []),
+            "ad_revenue": demo.get("ad_revenue", []),
+            "ad_spend": demo.get("ad_spend", []),
+            "budget": demo.get("budget", []),
+        }
+
         return JSONResponse(content={
             "mode": "live",
-            "data": {**ga4_data, "ai_summary": ai_summary}
+            "data": data_payload
         })
 
     except Exception as e:
