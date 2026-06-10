@@ -24,6 +24,9 @@ from pydantic import BaseModel
 # ── 本地模組 ──────────────────────────────────────────
 from ga4_client import GA4Client, GA4Config
 from ai_insight_engine import generate_insight
+from gsc_client import GSCClient
+from gads_client import GoogleAdsClient
+from meta_client import MetaAdsClient
 
 # ── App 初始化 ────────────────────────────────────────
 app = FastAPI(
@@ -54,13 +57,44 @@ class GA4Settings(BaseModel):
     property_id: str           # 例：properties/123456789
     credentials_json: str      # Service Account JSON 內容（字串）
 
+class GSCSettings(BaseModel):
+    site_url: str
+
+class GAdsSettings(BaseModel):
+    customer_id: str
+    developer_token: str
+    client_id: str
+    client_secret: str
+    refresh_token: str
+
+class MetaSettings(BaseModel):
+    account_id: str
+    token: str
+
 class SaveSettingsRequest(BaseModel):
     ga4: Optional[GA4Settings] = None
+    gsc: Optional[GSCSettings] = None
+    gads: Optional[GAdsSettings] = None
+    meta: Optional[MetaSettings] = None
     openai_key: Optional[str] = None
 
 class ValidateRequest(BaseModel):
     property_id: str
     credentials_json: str
+
+class GSCValidateRequest(BaseModel):
+    site_url: str
+
+class GAdsValidateRequest(BaseModel):
+    customer_id: str
+    developer_token: str
+    client_id: str
+    client_secret: str
+    refresh_token: str
+
+class MetaValidateRequest(BaseModel):
+    account_id: str
+    token: str
 
 # ══════════════════════════════════════════════════════
 # 工具函式
@@ -103,6 +137,9 @@ async def health_check():
             "ga4_property_id":        settings.get("ga4_property_id", ""),
             "openai_configured":      bool(settings.get("openai_key") or os.getenv("OPENAI_API_KEY")),
             "credentials_file_exists": cred_path is not None,
+            "gsc_configured":          bool(settings.get("gsc_site_url")) and cred_path is not None,
+            "gads_configured":         bool(settings.get("gads_customer_id")),
+            "meta_configured":         bool(settings.get("meta_account_id")),
             "demo_mode":              not (bool(settings.get("ga4_property_id")) and cred_path is not None),
         }
     }
@@ -111,7 +148,7 @@ async def health_check():
 @app.post("/api/settings/save")
 async def save_api_settings(req: SaveSettingsRequest):
     """
-    儲存 GA4 Property ID、Service Account JSON、OpenAI Key
+    儲存 GA4 Property ID、Service Account JSON、OpenAI Key、GSC、Google Ads、Meta Ads 設定
     這是用戶在「設定頁面」填完表單後呼叫的端點
     """
     settings = load_settings()
@@ -132,6 +169,20 @@ async def save_api_settings(req: SaveSettingsRequest):
         except json.JSONDecodeError:
             raise HTTPException(status_code=400, detail="Service Account JSON 格式錯誤，請確認內容是完整的 JSON 格式。")
 
+    if req.gsc:
+        settings["gsc_site_url"] = req.gsc.site_url.strip()
+
+    if req.gads:
+        settings["gads_customer_id"] = req.gads.customer_id.strip()
+        settings["gads_developer_token"] = req.gads.developer_token.strip()
+        settings["gads_client_id"] = req.gads.client_id.strip()
+        settings["gads_client_secret"] = req.gads.client_secret.strip()
+        settings["gads_refresh_token"] = req.gads.refresh_token.strip()
+
+    if req.meta:
+        settings["meta_account_id"] = req.meta.account_id.strip()
+        settings["meta_token"] = req.meta.token.strip()
+
     if req.openai_key:
         settings["openai_key"] = req.openai_key.strip()
 
@@ -143,7 +194,6 @@ async def save_api_settings(req: SaveSettingsRequest):
 async def validate_ga4(req: ValidateRequest):
     """
     驗證 GA4 Property ID + Service Account 是否能成功連線
-    用戶點擊「驗證」按鈕時呼叫
     """
     try:
         # 暫時寫入 credentials 測試
@@ -170,6 +220,57 @@ async def validate_ga4(req: ValidateRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"連線失敗：{str(e)}")
 
+# ── 驗證 Search Console 連線 ───────────────────────────
+@app.post("/api/settings/validate-gsc")
+async def validate_gsc(req: GSCValidateRequest):
+    """
+    驗證 Search Console 連線
+    """
+    cred_path = get_credentials_path()
+    if not cred_path:
+        raise HTTPException(status_code=400, detail="請先上傳或貼上 GA4 的 Service Account JSON，兩者使用相同金鑰。")
+    try:
+        client = GSCClient(str(cred_path), req.site_url)
+        result = client.test_connection()
+        return {"success": True, "message": f"Search Console 連線成功！已連接到 {result['site']}"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"連線失敗：{str(e)}")
+
+# ── 驗證 Google Ads 連線 ─────────────────────────────
+@app.post("/api/settings/validate-gads")
+async def validate_gads(req: GAdsValidateRequest):
+    """
+    驗證 Google Ads 連線
+    """
+    try:
+        client = GoogleAdsClient(
+            customer_id=req.customer_id,
+            developer_token=req.developer_token,
+            client_id=req.client_id,
+            client_secret=req.client_secret,
+            refresh_token=req.refresh_token
+        )
+        result = client.test_connection()
+        return {"success": True, "message": f"Google Ads 連線成功！客戶 ID: {result['customer_id']}"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"連線失敗：{str(e)}")
+
+# ── 驗證 Meta Ads 連線 ───────────────────────────────
+@app.post("/api/settings/validate-meta")
+async def validate_meta(req: MetaValidateRequest):
+    """
+    驗證 Meta Ads 連線
+    """
+    try:
+        client = MetaAdsClient(
+            ad_account_id=req.account_id,
+            access_token=req.token
+        )
+        result = client.test_connection()
+        return {"success": True, "message": f"Meta Ads 連線成功！帳戶名稱: {result['name']}"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"連線失敗：{str(e)}")
+
 # ── 讀取目前設定 ──────────────────────────────────────
 @app.get("/api/settings")
 async def get_settings():
@@ -182,6 +283,17 @@ async def get_settings():
         "ga4_configured":          bool(settings.get("ga4_property_id")) and cred_path is not None,
         "openai_configured":       bool(settings.get("openai_key") or os.getenv("OPENAI_API_KEY")),
         "credentials_file_exists": cred_path is not None,
+        "gsc_site_url":            settings.get("gsc_site_url", ""),
+        "gsc_configured":          bool(settings.get("gsc_site_url")) and cred_path is not None,
+        "gads_customer_id":        settings.get("gads_customer_id", ""),
+        "gads_developer_token":    settings.get("gads_developer_token", ""),
+        "gads_client_id":          settings.get("gads_client_id", ""),
+        "gads_client_secret":      settings.get("gads_client_secret", ""),
+        "gads_refresh_token":      settings.get("gads_refresh_token", ""),
+        "gads_configured":         bool(settings.get("gads_customer_id")),
+        "meta_account_id":         settings.get("meta_account_id", ""),
+        "meta_token":              settings.get("meta_token", ""),
+        "meta_configured":         bool(settings.get("meta_account_id"))
     }
 
 # ── 完整 Dashboard 數據 ───────────────────────────────
@@ -209,90 +321,298 @@ async def get_dashboard(
             "data": _get_demo_data()
         })
 
-    # ── 真實模式：呼叫 GA4 API ────────────────────────
+    # ── 真實模式：呼叫 GA4 / GSC / Ads API ────────────────
     try:
-        config = GA4Config(
-            property_id=settings["ga4_property_id"],
-            credentials_path=str(cred_path)
-        )
-        client = GA4Client(config)
+        # 1. 準備各種 Clients
+        ga4_client = None
+        if settings.get("ga4_property_id") and cred_path:
+            config = GA4Config(
+                property_id=settings["ga4_property_id"],
+                credentials_path=str(cred_path)
+            )
+            ga4_client = GA4Client(config)
 
-        # 並行撈取多組數據，加速回應
-        results = await asyncio.gather(
-            asyncio.to_thread(client.get_overview,         start_date, end_date),
-            asyncio.to_thread(client.get_sessions_trend,   start_date, end_date),
-            asyncio.to_thread(client.get_traffic_sources,  start_date, end_date),
-            asyncio.to_thread(client.get_top_pages,        start_date, end_date),
-            asyncio.to_thread(client.get_device_breakdown, start_date, end_date),
-            return_exceptions=True
-        )
+        gsc_client = None
+        if settings.get("gsc_site_url") and cred_path:
+            gsc_client = GSCClient(str(cred_path), settings["gsc_site_url"])
 
-        overview, sessions_trend, traffic_sources, top_pages, device = results
+        gads_client = None
+        if settings.get("gads_customer_id") and settings.get("gads_developer_token"):
+            gads_client = GoogleAdsClient(
+                customer_id=settings["gads_customer_id"],
+                developer_token=settings["gads_developer_token"],
+                client_id=settings.get("gads_client_id", ""),
+                client_secret=settings.get("gads_client_secret", ""),
+                refresh_token=settings.get("gads_refresh_token", "")
+            )
 
-        # 處理部分失敗
-        for r in results:
-            if isinstance(r, Exception):
-                print(f"[WARN] 部分數據撈取失敗：{r}")
+        meta_client = None
+        if settings.get("meta_account_id") and settings.get("meta_token"):
+            meta_client = MetaAdsClient(
+                ad_account_id=settings["meta_account_id"],
+                access_token=settings["meta_token"]
+            )
 
-        # 將 GA4 真實數據映射為前端期待的格式
-        overview_dict = overview if not isinstance(overview, Exception) else {}
-        sessions_delta = overview_dict.get("sessions_delta", "—")
-        users_delta = overview_dict.get("users_delta", "—")
+        # 2. 並行拉取數據
+        tasks = []
+        
+        # GA4 Tasks
+        if ga4_client:
+            tasks.append(asyncio.to_thread(ga4_client.get_overview, start_date, end_date))
+            tasks.append(asyncio.to_thread(ga4_client.get_sessions_trend, start_date, end_date))
+            tasks.append(asyncio.to_thread(ga4_client.get_traffic_sources, start_date, end_date))
+            tasks.append(asyncio.to_thread(ga4_client.get_top_pages, start_date, end_date))
+            tasks.append(asyncio.to_thread(ga4_client.get_device_breakdown, start_date, end_date))
+        else:
+            tasks.extend([None, None, None, None, None])
 
-        # 1. KPIs
+        # GSC Tasks
+        if gsc_client:
+            tasks.append(asyncio.to_thread(gsc_client.get_keywords_report, start_date, end_date))
+            tasks.append(asyncio.to_thread(gsc_client.get_daily_trends, "13daysAgo", "today"))
+            tasks.append(asyncio.to_thread(gsc_client.get_search_type_breakdown, start_date, end_date))
+        else:
+            tasks.extend([None, None, None])
+
+        # GAds Tasks
+        if gads_client:
+            tasks.append(asyncio.to_thread(gads_client.get_campaigns_report, start_date, end_date))
+            tasks.append(asyncio.to_thread(gads_client.get_daily_trends, "13daysAgo", "today"))
+        else:
+            tasks.extend([None, None])
+
+        # Meta Tasks
+        if meta_client:
+            tasks.append(asyncio.to_thread(meta_client.get_campaigns_report, start_date, end_date))
+            tasks.append(asyncio.to_thread(meta_client.get_daily_trends, "13daysAgo", "today"))
+        else:
+            tasks.extend([None, None])
+
+        # 執行 Tasks
+        # 過濾非 None 任務來並行執行，以防 exceptions
+        exec_tasks = [t for t in tasks if t is not None]
+        raw_results = await asyncio.gather(*exec_tasks, return_exceptions=True)
+        
+        # 還原到對應位置
+        results = []
+        result_idx = 0
+        for t in tasks:
+            if t is None:
+                results.append(None)
+            else:
+                r = raw_results[result_idx]
+                if isinstance(r, Exception):
+                    print(f"[WARN] 數據拉取失敗：{r}")
+                    results.append(None)
+                else:
+                    results.append(r)
+                result_idx += 1
+
+        # 展開結果
+        ga4_overview, ga4_sessions_trend, ga4_traffic_sources, ga4_top_pages, ga4_device = results[0:5]
+        gsc_kws, gsc_trend, gsc_search_type = results[5:8]
+        gads_campaigns, gads_trend = results[8:10]
+        meta_campaigns, meta_trend = results[10:12]
+
+        demo = _get_demo_data()
+
+        # 3. 處理 GA4 數據
+        if not ga4_overview:
+            ga4_overview = {}
+        sessions_val = f"{ga4_overview.get('sessions', 0):,}" if "sessions" in ga4_overview else demo["kpis"]["sessions"]["value"]
+        sessions_delta = ga4_overview.get("sessions_delta", "—")
+        sessions_trend = "up" if "+" in sessions_delta else "down" if "-" in sessions_delta else "flat"
+
+        users_val = f"{ga4_overview.get('users', 0):,}" if "users" in ga4_overview else demo["kpis"]["users"]["value"]
+        users_delta = ga4_overview.get("users_delta", "—")
+        users_trend = "up" if "+" in users_delta else "down" if "-" in users_delta else "flat"
+
+        s_trend = ga4_sessions_trend.get("sessions_trend", []) if ga4_sessions_trend else demo["sessions_trend"]
+        u_trend = ga4_sessions_trend.get("users_trend", []) if ga4_sessions_trend else demo["users_trend"]
+        nu_trend = ga4_sessions_trend.get("new_users_trend", []) if ga4_sessions_trend else demo["new_users_trend"]
+
+        t_sources = ga4_traffic_sources if ga4_traffic_sources else demo["traffic_source"]
+        dev_data = ga4_device if ga4_device else demo["device"]
+        pages_data = ga4_top_pages if ga4_top_pages else demo["pages"]
+
+        # 4. 處理 GSC 數據
+        kws = gsc_kws if gsc_kws is not None else demo["keywords"]
+        
+        # 曝光 KPI
+        gsc_total_imp = 0
+        if gsc_trend and gsc_trend.get("ssc_imp"):
+            gsc_total_imp = sum(gsc_trend["ssc_imp"])
+            
+        imp_val = f"{gsc_total_imp:,}" if gsc_total_imp > 0 else demo["kpis"]["impressions"]["value"]
+        imp_delta = "—"
+        imp_trend = "flat"
+
+        ssc_imp = gsc_trend.get("ssc_imp", []) if gsc_trend else demo["ssc_imp"]
+        ssc_click = gsc_trend.get("ssc_click", []) if gsc_trend else demo["ssc_click"]
+        search_type = gsc_search_type if gsc_search_type else demo["search_type"]
+
+        # 5. 處理廣告數據 (Google Ads & Meta Ads)
+        channels = []
+        total_spend = 0.0
+        total_rev = 0.0
+        
+        # Google Ads
+        gads_spend = 0.0
+        gads_imp = 0
+        gads_clicks = 0
+        gads_conv = 0.0
+        gads_rev = 0.0
+        
+        if gads_campaigns:
+            for c in gads_campaigns:
+                gads_spend += c["spend"]
+                gads_imp += c["imp"]
+                gads_clicks += c["click"]
+                gads_conv += c["conv"]
+                gads_rev += c["spend"] * c["roas"]
+            
+            total_spend += gads_spend
+            total_rev += gads_rev
+            
+            gads_roas = gads_rev / gads_spend if gads_spend > 0 else 0.0
+            gads_cpa = gads_spend / gads_conv if gads_conv > 0 else 0.0
+            channels.append({
+                "name": "Google Ads",
+                "icon": "ti-brand-google",
+                "icon_bg": "#EFF6FF",
+                "icon_color": "#1d4ed8",
+                "spend": f"${gads_spend:,.0f}",
+                "imp": f"{gads_imp/1000:.1f}K" if gads_imp >= 1000 else str(gads_imp),
+                "click": f"{gads_clicks:,}",
+                "conv": f"{gads_conv:,.0f}",
+                "cpa": f"${gads_cpa:.1f}",
+                "roas": f"{gads_roas:.2f}×",
+                "status": "good" if gads_roas >= 3.0 else "warn" if gads_roas >= 1.5 else "bad"
+            })
+        else:
+            channels.append(demo["channels"][0])
+            total_spend += 68200.0
+            total_rev += 68200.0 * 4.2
+
+        # Meta Ads
+        meta_spend = 0.0
+        meta_imp = 0
+        meta_clicks = 0
+        meta_conv = 0.0
+        meta_rev = 0.0
+        
+        if meta_campaigns:
+            for c in meta_campaigns:
+                meta_spend += c["spend"]
+                meta_imp += c["imp"]
+                meta_clicks += c["click"]
+                meta_conv += c["conv"]
+                meta_rev += c["spend"] * c["roas"]
+                
+            total_spend += meta_spend
+            total_rev += meta_rev
+            
+            meta_roas = meta_rev / meta_spend if meta_spend > 0 else 0.0
+            meta_cpa = meta_spend / meta_conv if meta_conv > 0 else 0.0
+            channels.append({
+                "name": "Meta Ads",
+                "icon": "ti-brand-facebook",
+                "icon_bg": "#F5F3FF",
+                "icon_color": "#6d28d9",
+                "spend": f"${meta_spend:,.0f}",
+                "imp": f"{meta_imp/1000:.1f}K" if meta_imp >= 1000 else str(meta_imp),
+                "click": f"{meta_clicks:,}",
+                "conv": f"{meta_conv:,.0f}",
+                "cpa": f"${meta_cpa:.1f}",
+                "roas": f"{meta_roas:.2f}×",
+                "status": "good" if meta_roas >= 3.0 else "warn" if meta_roas >= 1.5 else "bad"
+            })
+        else:
+            channels.append(demo["channels"][1])
+            total_spend += 42300.0
+            total_rev += 42300.0 * 2.8
+
+        # YouTube Ads (Keep demo)
+        channels.append(demo["channels"][2])
+        total_spend += 14000.0
+        total_rev += 14000.0 * 1.9
+
+        # ROAS KPI
+        roas_val = f"{total_rev / total_spend:.2f}×" if total_spend > 0 else demo["kpis"]["roas"]["value"]
+        
+        # Budget breakdown
+        gads_pct = round(gads_spend / total_spend * 100) if total_spend > 0 and gads_campaigns else 55
+        meta_pct = round(meta_spend / total_spend * 100) if total_spend > 0 and meta_campaigns else 34
+        yt_pct = 100 - gads_pct - meta_pct if gads_campaigns or meta_campaigns else 11
+        
+        budget = [
+            {"label": "Google", "value": gads_pct, "color": "#2563EB"},
+            {"label": "Meta", "value": meta_pct, "color": "#6b7280"},
+            {"label": "YouTube", "value": yt_pct, "color": "#d1d5db"}
+        ]
+
+        # Daily advertising trends
+        ad_spend_trend = []
+        ad_rev_trend = []
+        
+        if gads_trend or meta_trend:
+            merged_daily = {}
+            if gads_trend and gads_trend.get("labels"):
+                for idx, lbl in enumerate(gads_trend["labels"]):
+                    merged_daily[lbl] = {
+                        "spend": gads_trend["spend_trend"][idx],
+                        "revenue": gads_trend["revenue_trend"][idx]
+                    }
+            if meta_trend and meta_trend.get("labels"):
+                for idx, lbl in enumerate(meta_trend["labels"]):
+                    if lbl not in merged_daily:
+                        merged_daily[lbl] = {"spend": 0.0, "revenue": 0.0}
+                    merged_daily[lbl]["spend"] += meta_trend["spend_trend"][idx]
+                    merged_daily[lbl]["revenue"] += meta_trend["revenue_trend"][idx]
+            
+            if not merged_daily:
+                ad_spend_trend = demo["ad_spend"]
+                ad_rev_trend = demo["ad_revenue"]
+            else:
+                sorted_lbls = sorted(merged_daily.keys())
+                for lbl in sorted_lbls[-14:]:
+                    ad_spend_trend.append(round(merged_daily[lbl]["spend"] / 1000.0, 1))
+                    ad_rev_trend.append(round(merged_daily[lbl]["revenue"] / 1000.0, 1))
+        else:
+            ad_spend_trend = demo["ad_spend"]
+            ad_rev_trend = demo["ad_revenue"]
+
+        # KPIs
         kpis = {
-            "sessions": {
-                "value": f"{overview_dict.get('sessions', 0):,}" if "sessions" in overview_dict else "—",
-                "delta": sessions_delta,
-                "trend": "up" if "+" in sessions_delta else "down" if "-" in sessions_delta else "flat"
-            },
-            "users": {
-                "value": f"{overview_dict.get('users', 0):,}" if "users" in overview_dict else "—",
-                "delta": users_delta,
-                "trend": "up" if "+" in users_delta else "down" if "-" in users_delta else "flat"
-            },
-            "impressions": {"value": "—", "delta": "—", "trend": "flat"},
-            "roas":        {"value": "—", "delta": "—", "trend": "flat"},
+            "sessions":    {"value": sessions_val, "delta": sessions_delta, "trend": sessions_trend},
+            "users":       {"value": users_val,    "delta": users_delta,    "trend": users_trend},
+            "impressions": {"value": imp_val,      "delta": imp_delta,      "trend": imp_trend},
+            "roas":        {"value": roas_val,     "delta": "—",            "trend": "flat"}
         }
 
-        # 2. 每日趨勢
-        trend_dict = sessions_trend if not isinstance(sessions_trend, Exception) else {}
-        s_trend = trend_dict.get("sessions_trend", [])
-        u_trend = trend_dict.get("users_trend", [])
-        nu_trend = trend_dict.get("new_users_trend", [])
-
-        # 3. 流量來源與裝置類型
-        t_sources = traffic_sources if not isinstance(traffic_sources, Exception) else []
-        dev_data = device if not isinstance(device, Exception) else []
-
-        # 4. 熱門網頁
-        pages_data = top_pages if not isinstance(top_pages, Exception) else []
-
-        # 生成 AI 洞察
+        # 6. AI 洞察
         openai_key = settings.get("openai_key") or os.getenv("OPENAI_API_KEY", "")
         ai_summary = ""
-        if openai_key and overview_dict:
+        if openai_key:
             try:
-                # 將 ga4_data 包裝為原 format 以相容 generate_insight 函式
-                temp_ga4_data = {
-                    "overview": overview_dict,
-                    "sessions_trend": trend_dict,
+                temp_analytics_data = {
+                    "overview": ga4_overview,
+                    "sessions_trend": ga4_sessions_trend,
                     "traffic_sources": t_sources,
                     "top_pages": pages_data,
                     "device": dev_data,
+                    "keywords": kws,
+                    "channels": channels
                 }
                 ai_summary = await asyncio.to_thread(
-                    generate_insight, temp_ga4_data, openai_key
+                    generate_insight, temp_analytics_data, openai_key
                 )
             except Exception as e:
                 print(f"[WARN] AI 洞察生成失敗：{e}")
                 ai_summary = "AI 分析暫時無法使用，請稍後再試。"
 
-        # 取得 Demo 數據當作其他填寫項目的預設值 (避免 Search Console & Ads 面板在 live 模式下因沒資料而破版/報錯)
-        demo = _get_demo_data()
-
         data_payload = {
-            "ai_summary": ai_summary or f"已成功串接 GA4 真實數據！工作階段共 {overview_dict.get('sessions', 0):,} 次，不重複用戶 {overview_dict.get('users', 0):,} 位，跳出率 {overview_dict.get('bounce_rate', '—')}。",
+            "ai_summary": ai_summary or f"已成功串接真實數據！工作階段共 {ga4_overview.get('sessions', 0):,} 次，自然點擊 {sum(ssc_click):,} 次，廣告總花費 ${total_spend:,.0f}，全渠道 ROAS {roas_val}。",
             "kpis": kpis,
             "sessions_trend": s_trend,
             "users_trend": u_trend,
@@ -300,14 +620,14 @@ async def get_dashboard(
             "traffic_source": t_sources,
             "device": dev_data,
             "pages": pages_data,
-            "keywords": demo.get("keywords", []),
-            "ssc_imp": demo.get("ssc_imp", []),
-            "ssc_click": demo.get("ssc_click", []),
-            "search_type": demo.get("search_type", []),
-            "channels": demo.get("channels", []),
-            "ad_revenue": demo.get("ad_revenue", []),
-            "ad_spend": demo.get("ad_spend", []),
-            "budget": demo.get("budget", []),
+            "keywords": kws,
+            "ssc_imp": ssc_imp,
+            "ssc_click": ssc_click,
+            "search_type": search_type,
+            "channels": channels,
+            "ad_revenue": ad_rev_trend,
+            "ad_spend": ad_spend_trend,
+            "budget": budget,
         }
 
         return JSONResponse(content={
@@ -318,7 +638,7 @@ async def get_dashboard(
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"數據撈取失敗：{str(e)}。請確認 GA4 Property ID 與 Service Account 金鑰是否正確。"
+            detail=f"數據撈取失敗：{str(e)}。請確認設定資訊與 API 金鑰是否正確。"
         )
 
 # ── 單獨 GA4 端點 ─────────────────────────────────────

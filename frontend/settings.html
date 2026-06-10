@@ -306,7 +306,7 @@
 
       <div id="gsc-status" style="display:none;margin-top:10px" class="status-msg"></div>
 
-      <button class="validate-btn" onclick="validateGSC()">
+      <button class="validate-btn" id="btn-validate-gsc" onclick="validateGSC()">
         <i class="ti ti-plug" aria-hidden="true"></i> 驗證 Search Console 連線
       </button>
     </div>
@@ -346,9 +346,45 @@
         <div class="hint">在 Google Ads 右上角顯示，格式為 123-456-7890</div>
       </div>
 
+      <div class="field">
+        <label for="gads-developer-token">Developer Token</label>
+        <div class="input-wrap">
+          <i class="ti ti-key" aria-hidden="true"></i>
+          <input type="password" id="gads-developer-token" placeholder="Developer Token">
+        </div>
+        <div class="hint">在 Google Ads 後台「API 中心」申請的開發人員權杖</div>
+      </div>
+
+      <div class="field">
+        <label for="gads-client-id">Client ID</label>
+        <div class="input-wrap">
+          <i class="ti ti-id" aria-hidden="true"></i>
+          <input type="text" id="gads-client-id" placeholder="Client ID">
+        </div>
+        <div class="hint">GCP Cloud Console OAuth 2.0 Client ID</div>
+      </div>
+
+      <div class="field">
+        <label for="gads-client-secret">Client Secret</label>
+        <div class="input-wrap">
+          <i class="ti ti-lock" aria-hidden="true"></i>
+          <input type="password" id="gads-client-secret" placeholder="Client Secret">
+        </div>
+        <div class="hint">GCP Cloud Console OAuth 2.0 Client Secret</div>
+      </div>
+
+      <div class="field">
+        <label for="gads-refresh-token">Refresh Token</label>
+        <div class="input-wrap">
+          <i class="ti ti-refresh" aria-hidden="true"></i>
+          <input type="password" id="gads-refresh-token" placeholder="Refresh Token">
+        </div>
+        <div class="hint">透過 OAuth 授權流程取得的長效 Refresh Token</div>
+      </div>
+
       <div id="gads-status" style="display:none;margin-top:10px" class="status-msg"></div>
-      <button class="validate-btn" onclick="showStatus('gads-status','info','Google Ads 串接功能即將推出，目前設定將於下次更新生效。')">
-        <i class="ti ti-plug" aria-hidden="true"></i> 儲存 Google Ads 設定
+      <button class="validate-btn" id="btn-validate-gads" onclick="validateGAds()">
+        <i class="ti ti-plug" aria-hidden="true"></i> 驗證 Google Ads 連線
       </button>
     </div>
   </div>
@@ -398,8 +434,8 @@
       </div>
 
       <div id="meta-status" style="display:none;margin-top:10px" class="status-msg"></div>
-      <button class="validate-btn" onclick="showStatus('meta-status','info','Meta Ads 串接功能即將推出，目前設定將於下次更新生效。')">
-        <i class="ti ti-plug" aria-hidden="true"></i> 儲存 Meta Ads 設定
+      <button class="validate-btn" id="btn-validate-meta" onclick="validateMeta()">
+        <i class="ti ti-plug" aria-hidden="true"></i> 驗證 Meta Ads 連線
       </button>
     </div>
   </div>
@@ -562,10 +598,115 @@ async function validateGA4() {
 async function validateGSC() {
   const url = document.getElementById('gsc-site-url').value.trim();
   if (!url) { showStatus('gsc-status','error','請輸入你的網站 URL'); return; }
-  // TODO: 呼叫後端驗證端點（與 GA4 共用金鑰）
-  showStatus('gsc-status', 'info', '設定已記錄，Search Console 串接將在下次更新中完整支援。');
-  document.getElementById('badge-gsc').textContent = '已記錄';
-  document.getElementById('badge-gsc').className = 'badge badge-yellow';
+
+  const btn = document.getElementById('btn-validate-gsc');
+  btn.classList.add('loading');
+  btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> 驗證中...';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/settings/validate-gsc`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ site_url: url })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showStatus('gsc-status', 'success', `✓ Search Console 連線成功！已連接到 ${url}`);
+      document.getElementById('badge-gsc').textContent = '✓ 已完成';
+      document.getElementById('badge-gsc').className = 'badge badge-green';
+    } else {
+      showStatus('gsc-status', 'error', data.detail || '連線失敗，請確認是否已將 Service Account Email 加入權限');
+    }
+  } catch (e) {
+    showStatus('gsc-status', 'error', '無法連接到後端伺服器，請確認信號與服務狀態');
+  }
+
+  btn.classList.remove('loading');
+  btn.innerHTML = '<i class="ti ti-plug" aria-hidden="true"></i> 驗證 Search Console 連線';
+}
+
+// ── 驗證 Google Ads ─────────────────────────
+async function validateGAds() {
+  const customerId = document.getElementById('gads-customer-id').value.trim();
+  const devToken = document.getElementById('gads-developer-token').value.trim();
+  const clientId = document.getElementById('gads-client-id').value.trim();
+  const clientSecret = document.getElementById('gads-client-secret').value.trim();
+  const refreshToken = document.getElementById('gads-refresh-token').value.trim();
+
+  if (!customerId || !devToken || !clientId || !clientSecret || !refreshToken) {
+    showStatus('gads-status', 'error', '請填寫所有 Google Ads 設定欄位');
+    return;
+  }
+
+  const btn = document.getElementById('btn-validate-gads');
+  btn.classList.add('loading');
+  btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> 驗證中...';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/settings/validate-gads`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customer_id: customerId,
+        developer_token: devToken,
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showStatus('gads-status', 'success', `✓ Google Ads 連線成功！`);
+      document.getElementById('badge-gads').textContent = '✓ 已完成';
+      document.getElementById('badge-gads').className = 'badge badge-green';
+    } else {
+      showStatus('gads-status', 'error', data.detail || '連線失敗，請檢查金鑰或客戶 ID');
+    }
+  } catch (e) {
+    showStatus('gads-status', 'error', '無法連接到後端伺服器，請確認 FastAPI 是否已啟動');
+  }
+
+  btn.classList.remove('loading');
+  btn.innerHTML = '<i class="ti ti-plug" aria-hidden="true"></i> 驗證 Google Ads 連線';
+}
+
+// ── 驗證 Meta Ads ───────────────────────────
+async function validateMeta() {
+  const accountId = document.getElementById('meta-account-id').value.trim();
+  const token = document.getElementById('meta-token').value.trim();
+
+  if (!accountId || !token) {
+    showStatus('meta-status', 'error', '請填寫 Meta 廣告帳號 ID 與 Access Token');
+    return;
+  }
+
+  const btn = document.getElementById('btn-validate-meta');
+  btn.classList.add('loading');
+  btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> 驗證中...';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/settings/validate-meta`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        account_id: accountId,
+        token: token
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showStatus('meta-status', 'success', `✓ Meta Ads 連線成功！`);
+      document.getElementById('badge-meta').textContent = '✓ 已完成';
+      document.getElementById('badge-meta').className = 'badge badge-green';
+    } else {
+      showStatus('meta-status', 'error', data.detail || '連線失敗，請檢查 Token 與廣告帳號 ID');
+    }
+  } catch (e) {
+    showStatus('meta-status', 'error', '無法連接到後端伺服器，請確認 FastAPI 是否已啟動');
+  }
+
+  btn.classList.remove('loading');
+  btn.innerHTML = '<i class="ti ti-plug" aria-hidden="true"></i> 驗證 Meta Ads 連線';
 }
 
 // ── 儲存 AI Key ───────────────────────────────
@@ -595,6 +736,17 @@ async function saveAIKey() {
 async function saveAll() {
   const propId  = document.getElementById('ga4-property-id').value.trim();
   const jsonStr = document.getElementById('ga4-json').value.trim();
+  const gscUrl  = document.getElementById('gsc-site-url').value.trim();
+  
+  const gadsId = document.getElementById('gads-customer-id').value.trim();
+  const gadsDev = document.getElementById('gads-developer-token').value.trim();
+  const gadsClient = document.getElementById('gads-client-id').value.trim();
+  const gadsSecret = document.getElementById('gads-client-secret').value.trim();
+  const gadsRefresh = document.getElementById('gads-refresh-token').value.trim();
+  
+  const metaId = document.getElementById('meta-account-id').value.trim();
+  const metaToken = document.getElementById('meta-token').value.trim();
+  
   const aiKey   = document.getElementById('openai-key').value.trim();
 
   if (!propId || !jsonStr) {
@@ -605,6 +757,9 @@ async function saveAll() {
   try {
     const body = {};
     if (propId && jsonStr)  body.ga4 = { property_id: propId, credentials_json: jsonStr };
+    if (gscUrl)             body.gsc = { site_url: gscUrl };
+    if (gadsId)             body.gads = { customer_id: gadsId, developer_token: gadsDev, client_id: gadsClient, client_secret: gadsSecret, refresh_token: gadsRefresh };
+    if (metaId)             body.meta = { account_id: metaId, token: metaToken };
     if (aiKey)              body.openai_key = aiKey;
 
     const res = await fetch(`${API_BASE}/api/settings/save`, {
@@ -641,6 +796,30 @@ async function loadCurrentSettings() {
     if (s.ga4_configured) {
       document.getElementById('badge-ga4').textContent = '✓ 已完成';
       document.getElementById('badge-ga4').className = 'badge badge-green';
+    }
+    if (s.gsc_site_url) {
+      document.getElementById('gsc-site-url').value = s.gsc_site_url;
+    }
+    if (s.gsc_configured) {
+      document.getElementById('badge-gsc').textContent = '✓ 已完成';
+      document.getElementById('badge-gsc').className = 'badge badge-green';
+    }
+    if (s.gads_customer_id) {
+      document.getElementById('gads-customer-id').value = s.gads_customer_id;
+      document.getElementById('gads-developer-token').value = s.gads_developer_token || '';
+      document.getElementById('gads-client-id').value = s.gads_client_id || '';
+      document.getElementById('gads-client-secret').value = s.gads_client_secret || '';
+      document.getElementById('gads-refresh-token').value = s.gads_refresh_token || '';
+      
+      document.getElementById('badge-gads').textContent = '✓ 已完成';
+      document.getElementById('badge-gads').className = 'badge badge-green';
+    }
+    if (s.meta_account_id) {
+      document.getElementById('meta-account-id').value = s.meta_account_id;
+      document.getElementById('meta-token').value = s.meta_token || '';
+      
+      document.getElementById('badge-meta').textContent = '✓ 已完成';
+      document.getElementById('badge-meta').className = 'badge badge-green';
     }
     if (s.openai_configured) {
       document.getElementById('badge-ai').textContent = '✓ 已完成';
