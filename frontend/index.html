@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Data Studio — 全渠道數據分析</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════
+       TOP BAR
+  ═══════════════════════════════════════════ -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-dot" aria-hidden="true"></div>
+      AI Data Studio
+      <span class="brand-version">Beta</span>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="主要頁籤">
+      <button class="tab on" role="tab" aria-selected="true"  onclick="goTab(0)">總覽</button>
+      <button class="tab"    role="tab" aria-selected="false" onclick="goTab(1)">GA4 流量</button>
+      <button class="tab"    role="tab" aria-selected="false" onclick="goTab(2)">Search Console</button>
+      <button class="tab"    role="tab" aria-selected="false" onclick="goTab(3)">廣告投放</button>
+      <button class="tab"    role="tab" aria-selected="false" onclick="goTab(4)">串接教學</button>
+    </nav>
+    <div class="topbar-right">
+      <div class="date-picker" role="button" aria-label="選擇日期範圍" tabindex="0">
+        <i class="ti ti-calendar" aria-hidden="true"></i>
+        <span id="date-label">2025/05/26 — 06/08</span>
+        <i class="ti ti-chevron-down" aria-hidden="true"></i>
+      </div>
+      <div class="status-dot" id="status-dot" title="數據連線狀態"></div>
+      <button class="btn-primary" onclick="openModal('modal-connect')">
+        <i class="ti ti-plug" aria-hidden="true"></i> 串接資料源
+      </button>
+      <button class="btn-secondary" onclick="openModal('modal-help')" aria-label="開啟教學">
+        <i class="ti ti-help" aria-hidden="true"></i> 教學
+      </button>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════
+       PAGE 0：總覽
+  ═══════════════════════════════════════════ -->
+  <main class="page on" id="p0" role="tabpanel">
+
+    <div class="ai-insight" id="ai-insight-box" role="region" aria-label="AI 分析摘要">
+      <div class="ai-orb" aria-hidden="true"><i class="ti ti-sparkles"></i></div>
+      <div class="ai-insight-body">
+        <div class="ai-label">AI 本週摘要</div>
+        <p class="ai-text" id="ai-summary-text">
+          <strong>自然搜尋</strong>佔流量 61%，核心關鍵字「數據分析工具」排名升至 #4.2。
+          <strong>/pricing</strong> 跳出率達 78% 需優先改善，<strong>Meta Ads</strong> ROAS 從 3.2 降至 2.8 建議檢視受眾設定。整體工作階段 ↑9.4%，成長健康。
+        </p>
+        <div class="ai-actions">
+          <button class="ai-act-btn" onclick="sendPrompt('分析 /pricing 頁面跳出率高的原因並給出具體優化建議')">分析跳出率 ↗</button>
+          <button class="ai-act-btn" onclick="sendPrompt('幫我找出本週最值得優先處理的行銷問題，條列說明')">本週優先項目 ↗</button>
+          <button class="ai-act-btn" onclick="sendPrompt('根據這份數據，我的網站下一步應該優化哪些地方？')">全站健診 ↗</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI 卡片 -->
+    <div class="kpi-grid kpi-grid-4">
+      <div class="kpi-card" onclick="goTab(1)" title="點擊查看 GA4 流量詳情">
+        <div class="kpi-label">工作階段 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div class="kpi-value" data-key="sessions">38,241</div>
+        <div class="kpi-delta up">↑ +9.4% 較上期</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:74%;background:var(--accent)"></div></div>
+      </div>
+      <div class="kpi-card" onclick="goTab(1)" title="點擊查看用戶詳情">
+        <div class="kpi-label">不重複用戶 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div class="kpi-value" data-key="users">28,109</div>
+        <div class="kpi-delta up">↑ +5.2% 較上期</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:58%;background:var(--accent)"></div></div>
+      </div>
+      <div class="kpi-card" onclick="goTab(2)" title="點擊查看 Search Console">
+        <div class="kpi-label">搜尋曝光 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div class="kpi-value" data-key="impressions">182K</div>
+        <div class="kpi-delta up">↑ +12% 較上期</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:65%;background:var(--accent)"></div></div>
+      </div>
+      <div class="kpi-card" onclick="goTab(3)" title="點擊查看廣告投放詳情">
+        <div class="kpi-label">整體 ROAS <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div class="kpi-value" data-key="roas">3.61×</div>
+        <div class="kpi-delta flat">— 持平</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:55%;background:var(--muted)"></div></div>
+      </div>
+    </div>
+
+    <!-- 圖表區 -->
+    <div class="chart-grid">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">工作階段趨勢</div>
+            <div class="card-sub">GA4 · 最近 14 天</div>
+          </div>
+          <div class="seg-ctrl">
+            <button class="seg-btn on" onclick="switchSeg(this,'c-sess','14')">14天</button>
+            <button class="seg-btn" onclick="switchSeg(this,'c-sess','30')">30天</button>
+          </div>
+        </div>
+        <div class="legend-row">
+          <span class="legend-item"><span class="legend-sq" style="background:var(--accent)"></span>工作階段</span>
+          <span class="legend-item"><span class="legend-sq" style="background:#d1d5db"></span>不重複用戶</span>
+        </div>
+        <div class="chart-wrap"><canvas id="c-sess" role="img" aria-label="14天工作階段趨勢折線圖"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">流量來源</div>
+            <div class="card-sub">本週佔比</div>
+          </div>
+        </div>
+        <div class="chart-wrap chart-wrap-sm"><canvas id="c-src" role="img" aria-label="流量來源圓環圖，自然搜尋61%，直接18%，社群12%，其他9%"></canvas></div>
+        <div class="legend-grid">
+          <span class="legend-item"><span class="legend-sq" style="background:var(--accent)"></span>自然搜尋 61%</span>
+          <span class="legend-item"><span class="legend-sq" style="background:#6b7280"></span>直接流量 18%</span>
+          <span class="legend-item"><span class="legend-sq" style="background:#93c5fd"></span>社群媒體 12%</span>
+          <span class="legend-item"><span class="legend-sq" style="background:#e5e7eb"></span>其他 9%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 熱門頁面 + 熱門關鍵字 -->
+    <div class="grid-2col">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">熱門頁面 Top 5</div>
+          <button class="link-btn" onclick="goTab(1)">查看全部 →</button>
+        </div>
+        <ul class="url-list" id="overview-pages" aria-label="熱門頁面列表"></ul>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">熱門關鍵字 Top 5</div>
+          <button class="link-btn" onclick="goTab(2)">查看全部 →</button>
+        </div>
+        <div class="kw-list" id="overview-kws" aria-label="熱門關鍵字列表"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════
+       PAGE 1：GA4 流量
+  ═══════════════════════════════════════════ -->
+  <main class="page" id="p1" role="tabpanel">
+
+    <!-- 8 個 KPI -->
+    <div class="kpi-grid kpi-grid-4">
+      <div class="kpi-card" onclick="openModal('modal-metric','工作階段')">
+        <div class="kpi-label">工作階段 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div class="kpi-value">38,241</div>
+        <div class="kpi-delta up">↑ +9.4%</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:74%;background:var(--accent)"></div></div>
+      </div>
+      <div class="kpi-card" onclick="openModal('modal-metric','不重複用戶')">
+        <div class="kpi-label">不重複用戶 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div class="kpi-value">28,109</div>
+        <div class="kpi-delta up">↑ +5.2%</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:58%;background:var(--accent)"></div></div>
+      </div>
+      <div class="kpi-card" onclick="openModal('modal-metric','平均停留時間')">
+        <div class="kpi-label">平均停留時間 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div class="kpi-value">2:34</div>
+        <div class="kpi-delta dn">↓ −0:12</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:42%;background:var(--danger)"></div></div>
+      </div>
+      <div class="kpi-card" onclick="openModal('modal-metric','整體跳出率')">
+        <div class="kpi-label">整體跳出率 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div class="kpi-value">54.2%</div>
+        <div class="kpi-delta flat">— 持平</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:54%;background:var(--muted)"></div></div>
+      </div>
+    </div>
+    <div class="kpi-grid kpi-grid-4">
+      <div class="kpi-card" onclick="openModal('modal-metric','新用戶比例')">
+        <div class="kpi-label">新用戶比例 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div class="kpi-value">63.4%</div>
+        <div class="kpi-delta up">↑ +2.1%</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:63%;background:var(--accent)"></div></div>
+      </div>
+      <div class="kpi-card" onclick="openModal('modal-metric','轉換率')">
+        <div class="kpi-label">轉換率 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div class="kpi-value">3.82%</div>
+        <div class="kpi-delta up">↑ +0.4%</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:38%;background:var(--accent)"></div></div>
+      </div>
+      <div class="kpi-card" onclick="openModal('modal-metric','每次工作階段頁數')">
+        <div class="kpi-label">每次工作階段頁數 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div class="kpi-value">3.2</div>
+        <div class="kpi-delta flat">— 持平</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:45%;background:var(--muted)"></div></div>
+      </div>
+      <div class="kpi-card" onclick="openModal('modal-metric','目標完成次數')">
+        <div class="kpi-label">目標完成次數 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div class="kpi-value">1,462</div>
+        <div class="kpi-delta up">↑ +7.8%</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:52%;background:var(--accent)"></div></div>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">流量 + 用戶趨勢</div><div class="card-sub">GA4 · 14天</div></div>
+        </div>
+        <div class="legend-row">
+          <span class="legend-item"><span class="legend-sq" style="background:var(--accent)"></span>工作階段</span>
+          <span class="legend-item"><span class="legend-sq" style="background:#93c5fd"></span>不重複用戶</span>
+          <span class="legend-item"><span class="legend-sq" style="background:#d1fae5"></span>新用戶</span>
+        </div>
+        <div class="chart-wrap"><canvas id="c-ga4trend" role="img" aria-label="GA4 14天流量趨勢"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div><div class="card-title">裝置類型</div><div class="card-sub">本週</div></div></div>
+        <div class="chart-wrap chart-wrap-sm"><canvas id="c-device" role="img" aria-label="裝置類型圓環圖，手機58%，桌機34%，平板8%"></canvas></div>
+        <div class="legend-grid">
+          <span class="legend-item"><span class="legend-sq" style="background:var(--accent)"></span>手機 58%</span>
+          <span class="legend-item"><span class="legend-sq" style="background:#6b7280"></span>桌機 34%</span>
+          <span class="legend-item"><span class="legend-sq" style="background:#d1d5db"></span>平板 8%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">所有頁面完整報表</div>
+        <div class="card-sub">點擊任一列查看詳細分析</div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="pages-table">
+          <thead>
+            <tr>
+              <th>頁面路徑</th>
+              <th class="num">瀏覽量</th>
+              <th class="num">不重複</th>
+              <th class="num">平均停留</th>
+              <th class="num">跳出率</th>
+              <th class="num">轉換率</th>
+              <th class="num">狀態</th>
+            </tr>
+          </thead>
+          <tbody id="pages-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════
+       PAGE 2：Search Console
+  ═══════════════════════════════════════════ -->
+  <main class="page" id="p2" role="tabpanel">
+
+    <div class="kpi-grid kpi-grid-4">
+      <div class="kpi-card" onclick="openModal('modal-metric','搜尋曝光')">
+        <div class="kpi-label">搜尋曝光 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div class="kpi-value">182K</div>
+        <div class="kpi-delta up">↑ +12%</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:65%;background:var(--accent)"></div></div>
+      </div>
+      <div class="kpi-card" onclick="openModal('modal-metric','自然點擊')">
+        <div class="kpi-label">自然點擊 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div class="kpi-value">6,921</div>
+        <div class="kpi-delta up">↑ +9%</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:55%;background:var(--accent)"></div></div>
+      </div>
+      <div class="kpi-card" onclick="openModal('modal-metric','平均點擊率')">
+        <div class="kpi-label">平均點擊率 CTR <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div class="kpi-value">3.8%</div>
+        <div class="kpi-delta up">↑ +0.3%</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:38%;background:var(--accent)"></div></div>
+      </div>
+      <div class="kpi-card" onclick="openModal('modal-metric','平均排名')">
+        <div class="kpi-label">平均排名 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div class="kpi-value">#4.2</div>
+        <div class="kpi-delta up">↑ +0.8</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:72%;background:var(--accent)"></div></div>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">曝光 vs 點擊趨勢</div><div class="card-sub">Search Console · 14天</div></div>
+        </div>
+        <div class="legend-row">
+          <span class="legend-item"><span class="legend-sq" style="background:var(--accent)"></span>曝光</span>
+          <span class="legend-item"><span class="legend-sq" style="background:#16a34a"></span>點擊</span>
+        </div>
+        <div class="chart-wrap"><canvas id="c-ssc" role="img" aria-label="搜尋曝光與點擊趨勢雙軸折線圖"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div><div class="card-title">搜尋類型分布</div><div class="card-sub">本週</div></div></div>
+        <div class="chart-wrap chart-wrap-sm"><canvas id="c-sqtype" role="img" aria-label="搜尋類型圓環圖，網頁83%，圖片10%，影片7%"></canvas></div>
+        <div class="legend-grid">
+          <span class="legend-item"><span class="legend-sq" style="background:var(--accent)"></span>網頁 83%</span>
+          <span class="legend-item"><span class="legend-sq" style="background:#6b7280"></span>圖片 10%</span>
+          <span class="legend-item"><span class="legend-sq" style="background:#d1d5db"></span>影片 7%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">關鍵字完整報表</div>
+        <div class="card-sub">點擊查看詳情與 AI 優化建議</div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="kw-table">
+          <thead>
+            <tr>
+              <th>關鍵字</th>
+              <th class="num">曝光</th>
+              <th class="num">點擊</th>
+              <th class="num">CTR</th>
+              <th class="num">平均排名</th>
+              <th class="num">趨勢</th>
+              <th class="num">機會</th>
+            </tr>
+          </thead>
+          <tbody id="kw-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════
+       PAGE 3：廣告投放
+  ═══════════════════════════════════════════ -->
+  <main class="page" id="p3" role="tabpanel">
+
+    <div class="kpi-grid kpi-grid-4">
+      <div class="kpi-card" onclick="openModal('modal-metric','廣告花費')">
+        <div class="kpi-label">廣告花費 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div class="kpi-value">$124,500</div>
+        <div class="kpi-delta dn">↑ +12% 花費增加</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:72%;background:#f59e0b"></div></div>
+      </div>
+      <div class="kpi-card" onclick="openModal('modal-metric','廣告收益')">
+        <div class="kpi-label">廣告收益 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div class="kpi-value">$450,200</div>
+        <div class="kpi-delta up">↑ +8%</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:80%;background:var(--accent)"></div></div>
+      </div>
+      <div class="kpi-card" onclick="openModal('modal-metric','整體ROAS')">
+        <div class="kpi-label">整體 ROAS <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div class="kpi-value">3.61×</div>
+        <div class="kpi-delta flat">— 持平</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:55%;background:var(--muted)"></div></div>
+      </div>
+      <div class="kpi-card" onclick="openModal('modal-metric','轉換次數')">
+        <div class="kpi-label">轉換次數 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div class="kpi-value">1,842</div>
+        <div class="kpi-delta up">↑ +6.1%</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:62%;background:var(--accent)"></div></div>
+      </div>
+    </div>
+    <div class="kpi-grid kpi-grid-3">
+      <div class="kpi-card" onclick="openModal('modal-metric','平均CPC')">
+        <div class="kpi-label">平均 CPC <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div class="kpi-value">$1.84</div>
+        <div class="kpi-delta up">↓ −8% 降低</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:42%;background:var(--success)"></div></div>
+      </div>
+      <div class="kpi-card" onclick="openModal('modal-metric','平均CPA')">
+        <div class="kpi-label">平均 CPA <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div class="kpi-value">$67.6</div>
+        <div class="kpi-delta up">↓ −18% 改善</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:38%;background:var(--success)"></div></div>
+      </div>
+      <div class="kpi-card" onclick="openModal('modal-metric','廣告印象')">
+        <div class="kpi-label">總曝光次數 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div class="kpi-value">2.61M</div>
+        <div class="kpi-delta up">↑ +14%</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:68%;background:var(--accent)"></div></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header">
+        <div class="card-title">渠道效益明細</div>
+        <div class="card-sub">點擊查看各平台詳細診斷</div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="channel-table">
+          <thead>
+            <tr>
+              <th>渠道</th>
+              <th class="num">花費</th>
+              <th class="num">曝光</th>
+              <th class="num">點擊</th>
+              <th class="num">轉換</th>
+              <th class="num">CPA</th>
+              <th class="num">ROAS</th>
+              <th class="num">狀態</th>
+            </tr>
+          </thead>
+          <tbody id="channel-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid-2col">
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">花費 vs 收益</div><div class="card-sub">14天趨勢</div></div>
+        </div>
+        <div class="legend-row">
+          <span class="legend-item"><span class="legend-sq" style="background:var(--accent)"></span>收益</span>
+          <span class="legend-item"><span class="legend-sq" style="background:#d1d5db;border:1px dashed #9ca3af"></span>花費</span>
+        </div>
+        <div class="chart-wrap"><canvas id="c-adtrend" role="img" aria-label="廣告花費與收益14天趨勢"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div><div class="card-title">預算分配</div><div class="card-sub">各渠道</div></div></div>
+        <div class="chart-wrap chart-wrap-sm"><canvas id="c-budget" role="img" aria-label="預算分配圓環圖，Google55%，Meta34%，YouTube11%"></canvas></div>
+        <div class="legend-grid">
+          <span class="legend-item"><span class="legend-sq" style="background:var(--accent)"></span>Google 55%</span>
+          <span class="legend-item"><span class="legend-sq" style="background:#6b7280"></span>Meta 34%</span>
+          <span class="legend-item"><span class="legend-sq" style="background:#d1d5db"></span>YouTube 11%</span>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════
+       PAGE 4：串接教學
+  ═══════════════════════════════════════════ -->
+  <main class="page" id="p4" role="tabpanel">
+
+    <div class="notice-bar" role="alert">
+      <i class="ti ti-info-circle" aria-hidden="true"></i>
+      完成以下串接步驟後，Dashboard 即可自動顯示真實數據。每個步驟都有圖文說明，<strong>不需要技術背景</strong>。
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header">
+        <div class="card-title">串接進度</div>
+        <div class="card-sub">已完成 1 / 4 個步驟</div>
+      </div>
+      <div class="prog-track"><div class="prog-fill" style="width:25%"></div></div>
+    </div>
+
+    <div class="onb-list" id="onb-list"></div>
+
+    <div class="card" style="margin-top:20px">
+      <div class="card-header"><div class="card-title">常見問題</div></div>
+      <div class="faq-list" id="faq-list"></div>
+    </div>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════
+       MODALS
+  ═══════════════════════════════════════════ -->
+
+  <!-- Modal：頁面詳情 -->
+  <div class="modal-bg" id="modal-page" onclick="closeOnBg(event,'modal-page')" role="dialog" aria-modal="true" aria-labelledby="mp-title">
+    <div class="modal">
+      <div class="modal-head">
+        <h2 class="modal-title" id="mp-title">頁面詳情</h2>
+        <button class="modal-close" onclick="closeModal('modal-page')" aria-label="關閉">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-kpi-row">
+          <div class="modal-kpi"><div class="modal-kpi-lbl">瀏覽量</div><div class="modal-kpi-val" id="mp-views">—</div></div>
+          <div class="modal-kpi"><div class="modal-kpi-lbl">跳出率</div><div class="modal-kpi-val" id="mp-bounce">—</div></div>
+          <div class="modal-kpi"><div class="modal-kpi-lbl">平均停留</div><div class="modal-kpi-val" id="mp-time">—</div></div>
+        </div>
+        <div class="chart-wrap" style="height:110px;margin-bottom:14px"><canvas id="c-page-trend" role="img" aria-label="頁面7天趨勢"></canvas></div>
+        <div class="insight-box">
+          <div class="insight-box-label">AI 建議</div>
+          <p class="insight-box-text" id="mp-ai">分析中...</p>
+          <button class="ai-act-btn" id="mp-ai-btn">深入分析 ↗</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal：關鍵字詳情 -->
+  <div class="modal-bg" id="modal-kw" onclick="closeOnBg(event,'modal-kw')" role="dialog" aria-modal="true" aria-labelledby="mkw-title">
+    <div class="modal">
+      <div class="modal-head">
+        <h2 class="modal-title" id="mkw-title">關鍵字詳情</h2>
+        <button class="modal-close" onclick="closeModal('modal-kw')" aria-label="關閉">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-kpi-row">
+          <div class="modal-kpi"><div class="modal-kpi-lbl">平均排名</div><div class="modal-kpi-val" id="mkw-rank">—</div></div>
+          <div class="modal-kpi"><div class="modal-kpi-lbl">CTR</div><div class="modal-kpi-val" id="mkw-ctr">—</div></div>
+          <div class="modal-kpi"><div class="modal-kpi-lbl">本週點擊</div><div class="modal-kpi-val" id="mkw-click">—</div></div>
+        </div>
+        <div class="insight-box">
+          <div class="insight-box-label">AI 內容優化建議</div>
+          <p class="insight-box-text" id="mkw-ai">分析中...</p>
+          <button class="ai-act-btn" id="mkw-ai-btn">取得完整 SEO 建議 ↗</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal：指標說明 -->
+  <div class="modal-bg" id="modal-metric" onclick="closeOnBg(event,'modal-metric')" role="dialog" aria-modal="true" aria-labelledby="mm-title">
+    <div class="modal">
+      <div class="modal-head">
+        <h2 class="modal-title" id="mm-title">指標說明</h2>
+        <button class="modal-close" onclick="closeModal('modal-metric')" aria-label="關閉">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc" id="mm-desc"></p>
+        <div class="insight-box" style="background:#f9fafb;border-color:#e5e7eb">
+          <div class="insight-box-label" style="color:var(--text-secondary)">這個數字代表什麼？</div>
+          <p class="insight-box-text" id="mm-meaning"></p>
+        </div>
+        <div class="insight-box" style="margin-top:10px">
+          <div class="insight-box-label">如何改善？</div>
+          <p class="insight-box-text" id="mm-improve"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal：渠道詳情 -->
+  <div class="modal-bg" id="modal-channel" onclick="closeOnBg(event,'modal-channel')" role="dialog" aria-modal="true" aria-labelledby="mch-title">
+    <div class="modal">
+      <div class="modal-head">
+        <h2 class="modal-title" id="mch-title">渠道詳情</h2>
+        <button class="modal-close" onclick="closeModal('modal-channel')" aria-label="關閉">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-kpi-row">
+          <div class="modal-kpi"><div class="modal-kpi-lbl">ROAS</div><div class="modal-kpi-val" id="mch-roas">—</div></div>
+          <div class="modal-kpi"><div class="modal-kpi-lbl">CPA</div><div class="modal-kpi-val" id="mch-cpa">—</div></div>
+          <div class="modal-kpi"><div class="modal-kpi-lbl">轉換次數</div><div class="modal-kpi-val" id="mch-conv">—</div></div>
+        </div>
+        <div class="insight-box">
+          <div class="insight-box-label">AI 診斷與建議</div>
+          <p class="insight-box-text" id="mch-ai">分析中...</p>
+          <button class="ai-act-btn" id="mch-btn">完整優化方案 ↗</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal：串接教學 -->
+  <div class="modal-bg" id="modal-onb" onclick="closeOnBg(event,'modal-onb')" role="dialog" aria-modal="true" aria-labelledby="monb-title">
+    <div class="modal modal-wide">
+      <div class="modal-head">
+        <h2 class="modal-title" id="monb-title">串接教學</h2>
+        <button class="modal-close" onclick="closeModal('modal-onb')" aria-label="關閉">×</button>
+      </div>
+      <div class="modal-body">
+        <ol class="onb-steps" id="monb-steps"></ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal：FAQ -->
+  <div class="modal-bg" id="modal-faq" onclick="closeOnBg(event,'modal-faq')" role="dialog" aria-modal="true" aria-labelledby="mfaq-title">
+    <div class="modal">
+      <div class="modal-head">
+        <h2 class="modal-title" id="mfaq-title">常見問題</h2>
+        <button class="modal-close" onclick="closeModal('modal-faq')" aria-label="關閉">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="faq-answer" id="mfaq-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal：串接資料源 -->
+  <div class="modal-bg" id="modal-connect" onclick="closeOnBg(event,'modal-connect')" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-head">
+        <h2 class="modal-title">選擇資料源</h2>
+        <button class="modal-close" onclick="closeModal('modal-connect')" aria-label="關閉">×</button>
+      </div>
+      <div class="modal-body" id="connect-list"></div>
+    </div>
+  </div>
+
+  <!-- Modal：新手指南 -->
+  <div class="modal-bg" id="modal-help" onclick="closeOnBg(event,'modal-help')" role="dialog" aria-modal="true">
+    <div class="modal modal-wide">
+      <div class="modal-head">
+        <h2 class="modal-title">新手指南 — 10 分鐘完成串接</h2>
+        <button class="modal-close" onclick="closeModal('modal-help')" aria-label="關閉">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;line-height:1.7">
+          不需要技術背景，按照以下順序操作，10 分鐘內即可看到你的真實數據。
+        </p>
+        <ol class="onb-steps">
+          <li><div class="step-title">確認你有 Google Analytics 帳號</div><div class="step-desc">前往 analytics.google.com，確認你的網站已安裝 GA4（新版）。若還在用舊版 Universal Analytics，需先升級。</div><span class="step-tag">預計 5 分鐘</span></li>
+          <li><div class="step-title">點擊右上角「串接資料源」</div><div class="step-desc">選擇你要串接的平台，系統會帶你進入逐步教學，每一步都有截圖說明。</div><span class="step-tag">預計 2 分鐘</span></li>
+          <li><div class="step-title">貼上你的 Property ID 或金鑰</div><div class="step-desc">GA4 評估 ID 格式像 G-XXXXXXXXXX，在 GA4 後台「管理」→「資料串流」裡找得到。</div><span class="step-tag">不需要工程師</span></li>
+          <li><div class="step-title">數據自動載入 Dashboard</div><div class="step-desc">串接完成後，頁面會自動抓取你的真實數據，AI 也會開始分析並給出本週建議。</div><span class="step-tag">自動完成</span></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- 主邏輯 -->
+  <script src="dashboard.js"></script>
+</body>
+</html>

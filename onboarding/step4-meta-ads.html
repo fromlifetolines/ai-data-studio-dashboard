@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Step 4 — Meta Ads 串接</title>
+  <link rel="stylesheet" href="onboarding.css">
+</head>
+<body>
+
+<div class="onboarding-container">
+  <a href="index.html" class="back-link">← 返回教學首頁</a>
+
+  <header class="onboarding-header">
+    <h1>Meta Ads 串接教學</h1>
+    <p>導入 Facebook / Instagram 廣告投放數據</p>
+  </header>
+
+  <div class="progress-bar">
+    <div class="progress-step done"><span class="progress-dot">✓</span> GA4</div>
+    <div class="progress-line"></div>
+    <div class="progress-step done"><span class="progress-dot">✓</span> GSC</div>
+    <div class="progress-line"></div>
+    <div class="progress-step done"><span class="progress-dot">✓</span> Google Ads</div>
+    <div class="progress-line"></div>
+    <div class="progress-step active"><span class="progress-dot">4</span> Meta</div>
+  </div>
+
+  <div class="step-card">
+    <h2>Meta Marketing API 授權步驟</h2>
+    <p class="step-desc">Meta Ads 數據將在 Phase 3 正式上線，完成後即可實現全渠道 ROAS 分析。</p>
+
+    <ol class="step-list">
+      <li>
+        <div>
+          <strong>建立 Meta 開發者應用程式</strong>
+          <p>前往 <a href="https://developers.facebook.com/" target="_blank">Meta for Developers</a> → 建立應用程式 → 類型選「Business」。</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>新增 Marketing API 產品</strong>
+          <p>在應用程式 Dashboard 中，新增「Marketing API」產品。</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>取得 Access Token</strong>
+          <p>使用 OAuth 流程或 System User Token 取得長效 Access Token。<br>
+          在 <code>.env</code> 中加入：<br>
+          <code>META_ACCESS_TOKEN=your_token</code><br>
+          <code>META_AD_ACCOUNT_ID=act_123456789</code></p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>確認全渠道 Dashboard</strong>
+          <p>完成全部 4 步驟後，Dashboard 將顯示 GA4 + Google Ads + Meta Ads 的整合 ROAS 與 AI 跨渠道建議。</p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="tip-box">
+      <strong>🎉 恭喜！完成全部串接</strong>
+      你現在擁有完整的全渠道數據分析能力。AI 將自動比較各渠道 ROAS，提供預算分配建議。
+    </div>
+
+    <div class="step-nav">
+      <a href="step3-google-ads.html" class="btn btn-outline">← 上一步</a>
+      <a href="../frontend/index.html" class="btn btn-primary">完成！前往 Dashboard →</a>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

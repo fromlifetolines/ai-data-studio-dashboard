@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Step 2 — Search Console 串接</title>
+  <link rel="stylesheet" href="onboarding.css">
+</head>
+<body>
+
+<div class="onboarding-container">
+  <a href="index.html" class="back-link">← 返回教學首頁</a>
+
+  <header class="onboarding-header">
+    <h1>Google Search Console 串接</h1>
+    <p>導入 SEO 排名、搜尋曝光與點擊率數據</p>
+  </header>
+
+  <div class="progress-bar">
+    <div class="progress-step done"><span class="progress-dot">✓</span> GA4</div>
+    <div class="progress-line"></div>
+    <div class="progress-step active"><span class="progress-dot">2</span> GSC</div>
+    <div class="progress-line"></div>
+    <div class="progress-step"><span class="progress-dot">3</span> Google Ads</div>
+    <div class="progress-line"></div>
+    <div class="progress-step"><span class="progress-dot">4</span> Meta</div>
+  </div>
+
+  <div class="step-card">
+    <h2>Search Console API 授權步驟</h2>
+    <p class="step-desc">GSC 數據將在 Phase 2 正式上線，現可提前完成授權設定。</p>
+
+    <ol class="step-list">
+      <li>
+        <div>
+          <strong>啟用 Search Console API</strong>
+          <p>在同一個 GCP 專案中，搜尋並啟用 <code>Google Search Console API</code>。</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>使用相同的 Service Account</strong>
+          <p>Step 1 建立的 Service Account 可直接使用，無需額外建立。</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>在 Search Console 中授權</strong>
+          <p>Search Console → 設定 → 使用者和權限 → 新增使用者 → 貼上 Service Account email → 權限選「完整」。</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>設定網站 URL</strong>
+          <p>在 <code>.env</code> 中加入：<br>
+          <code>GSC_SITE_URL=https://yourdomain.com</code></p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="tip-box">
+      <strong>📊 上線後可看到的數據</strong>
+      搜尋關鍵字排名、曝光次數、點擊率 (CTR)、平均排名位置。
+    </div>
+
+    <div class="step-nav">
+      <a href="step1-ga4.html" class="btn btn-outline">← 上一步</a>
+      <a href="step3-google-ads.html" class="btn btn-primary">下一步：Google Ads →</a>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

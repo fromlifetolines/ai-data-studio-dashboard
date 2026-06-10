@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Step 3 — Google Ads 串接</title>
+  <link rel="stylesheet" href="onboarding.css">
+</head>
+<body>
+
+<div class="onboarding-container">
+  <a href="index.html" class="back-link">← 返回教學首頁</a>
+
+  <header class="onboarding-header">
+    <h1>Google Ads 串接教學</h1>
+    <p>導入搜尋廣告、展示廣告的花費、轉換與 ROAS</p>
+  </header>
+
+  <div class="progress-bar">
+    <div class="progress-step done"><span class="progress-dot">✓</span> GA4</div>
+    <div class="progress-line"></div>
+    <div class="progress-step done"><span class="progress-dot">✓</span> GSC</div>
+    <div class="progress-line"></div>
+    <div class="progress-step active"><span class="progress-dot">3</span> Google Ads</div>
+    <div class="progress-line"></div>
+    <div class="progress-step"><span class="progress-dot">4</span> Meta</div>
+  </div>
+
+  <div class="step-card">
+    <h2>Google Ads API 授權步驟</h2>
+    <p class="step-desc">Google Ads 數據將在 Phase 3 正式上線。</p>
+
+    <ol class="step-list">
+      <li>
+        <div>
+          <strong>申請 Google Ads API 存取權</strong>
+          <p>前往 <a href="https://developers.google.com/google-ads/api/docs/first-call/overview" target="_blank">Google Ads API 文件</a>，申請 Developer Token。</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>建立 OAuth 2.0 憑證</strong>
+          <p>GCP Console → API 和服務 → 憑證 → 建立 OAuth 2.0 用戶端 ID（Web 應用程式）。</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>取得 Refresh Token</strong>
+          <p>使用 OAuth 流程取得 Refresh Token，存入 <code>.env</code>：<br>
+          <code>GOOGLE_ADS_CUSTOMER_ID=1234567890</code><br>
+          <code>GOOGLE_ADS_REFRESH_TOKEN=your_token</code></p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>確認 Dashboard 顯示</strong>
+          <p>完成後，Dashboard 的 Google Ads 卡片會從 mock 數據切換為真實投放數據。</p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="tip-box">
+      <strong>💰 上線後可看到的數據</strong>
+      各 Campaign 花費、點擊、轉換、CPA、ROAS，以及每日趨勢圖。
+    </div>
+
+    <div class="step-nav">
+      <a href="step2-gsc.html" class="btn btn-outline">← 上一步</a>
+      <a href="step4-meta-ads.html" class="btn btn-primary">下一步：Meta Ads →</a>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

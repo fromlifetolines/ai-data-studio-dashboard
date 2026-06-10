@@ -1,0 +1,661 @@
+/* ═══════════════════════════════════════════
+   AI Data Studio — dashboard.js
+   職責：
+   1. 靜態資料 (Mock Data) — 開發 / Demo 用
+   2. API 呼叫層 (fetchDashboard) — 等後端完成後取消註解啟用
+   3. 圖表渲染 (Chart.js)
+   4. 頁籤切換 / Modal 控制
+   5. 動態列表渲染
+   ═══════════════════════════════════════════ */
+
+'use strict';
+
+/* ────────────────────────────────────────────
+   1. 設定
+──────────────────────────────────────────── */
+const API_BASE = 'http://localhost:8000';  // FastAPI 後端位址，上線後改為正式 domain
+let DASHBOARD_DATA = null;
+
+const DAYS_14 = ['5/26','5/27','5/28','5/29','5/30','5/31','6/1','6/2','6/3','6/4','6/5','6/6','6/7','6/8'];
+
+/* ────────────────────────────────────────────
+   2. Mock Data（後端打通後由 API 取代）
+──────────────────────────────────────────── */
+const MOCK = {
+  ai_summary: '自然搜尋佔流量 61%，核心關鍵字「數據分析工具」排名升至 #4.2。<strong>/pricing</strong> 跳出率達 78% 需優先改善，<strong>Meta Ads</strong> ROAS 從 3.2 降至 2.8 建議檢視受眾設定。整體工作階段 ↑9.4%，成長健康。',
+
+  kpis: {
+    sessions:    { value: '38,241', delta: '+9.4%', trend: 'up' },
+    users:       { value: '28,109', delta: '+5.2%', trend: 'up' },
+    impressions: { value: '182K',   delta: '+12%',  trend: 'up' },
+    roas:        { value: '3.61×',  delta: '—',     trend: 'flat' },
+  },
+
+  sessions_trend: [2400,2800,2600,3100,3300,3800,3600,3200,3700,4000,4300,4100,4500,4700],
+  users_trend:    [1800,2100,1950,2300,2450,2800,2650,2400,2800,3000,3200,3100,3400,3500],
+  new_users_trend:[1100,1300,1200,1500,1600,1900,1750,1500,1750,1900,2000,1950,2100,2200],
+
+  traffic_source: [
+    { label:'自然搜尋', value:61, color:'#2563EB' },
+    { label:'直接流量', value:18, color:'#6b7280' },
+    { label:'社群媒體', value:12, color:'#93c5fd' },
+    { label:'其他',     value: 9, color:'#e5e7eb' },
+  ],
+
+  device: [
+    { label:'手機', value:58, color:'#2563EB' },
+    { label:'桌機', value:34, color:'#6b7280' },
+    { label:'平板', value: 8, color:'#d1d5db' },
+  ],
+
+  pages: [
+    { path:'/',               views:12401, unique:9820,  time:'3:12', bounce:'38%',  conv:'4.2%', status:'good' },
+    { path:'/pricing',        views:7832,  unique:6140,  time:'1:05', bounce:'78%',  conv:'1.8%', status:'bad'  },
+    { path:'/blog/ga4-guide', views:5210,  unique:4890,  time:'4:28', bounce:'41%',  conv:'2.9%', status:'good' },
+    { path:'/features',       views:3980,  unique:3200,  time:'2:50', bounce:'45%',  conv:'3.1%', status:'warn' },
+    { path:'/docs',           views:2140,  unique:1980,  time:'5:10', bounce:'33%',  conv:'6.4%', status:'good' },
+    { path:'/contact',        views:1820,  unique:1650,  time:'1:45', bounce:'52%',  conv:'8.9%', status:'good' },
+    { path:'/blog/seo-tips',  views:1540,  unique:1410,  time:'3:55', bounce:'39%',  conv:'2.1%', status:'warn' },
+  ],
+
+  keywords: [
+    { kw:'數據分析工具',          imp:28400, click:1477, ctr:'5.2%', rank:'#4.0', trend:'+2', opp:'進入首頁',  opp_type:'good' },
+    { kw:'GA4 教學',              imp:19200, click:1306, ctr:'6.8%', rank:'#3.2', trend:'+3', opp:'搶 Top3',   opp_type:'good' },
+    { kw:'網站流量分析',          imp:15800, click:616,  ctr:'3.9%', rank:'#6.1', trend:'−1', opp:'加強內容',  opp_type:'warn' },
+    { kw:'google analytics 設定', imp:11400, click:240,  ctr:'2.1%', rank:'#12',  trend:'+5', opp:'有潛力',    opp_type:'warn' },
+    { kw:'SEO 工具推薦',          imp:9600,  click:173,  ctr:'1.8%', rank:'#18',  trend:'—',  opp:'待衝刺',    opp_type:'bad'  },
+    { kw:'廣告效益分析',          imp:7200,  click:158,  ctr:'2.2%', rank:'#14',  trend:'+2', opp:'有潛力',    opp_type:'warn' },
+  ],
+
+  ssc_imp:   [11000,12500,12000,13800,14200,15000,14500,13200,14800,16000,17000,16500,18000,18200],
+  ssc_click: [420,490,460,530,550,590,570,510,570,620,660,640,690,692],
+
+  search_type: [
+    { label:'網頁', value:83, color:'#2563EB' },
+    { label:'圖片', value:10, color:'#6b7280' },
+    { label:'影片', value: 7, color:'#d1d5db' },
+  ],
+
+  channels: [
+    { name:'Google Ads', icon:'ti-brand-google', icon_bg:'#EFF6FF', icon_color:'#1d4ed8',
+      spend:'$68,200', imp:'520K', click:'18,400', conv:'1,140', cpa:'$59.8', roas:'4.2×', status:'good' },
+    { name:'Meta Ads',   icon:'ti-brand-facebook', icon_bg:'#F5F3FF', icon_color:'#6d28d9',
+      spend:'$42,300', imp:'890K', click:'11,200', conv:'580',   cpa:'$72.9', roas:'2.8×', status:'warn' },
+    { name:'YouTube Ads',icon:'ti-brand-youtube',  icon_bg:'#FFF7ED', icon_color:'#c2410c',
+      spend:'$14,000', imp:'1.2M', click:'4,800',  conv:'122',   cpa:'$114.8',roas:'1.9×', status:'bad'  },
+  ],
+
+  ad_revenue: [29,33,31,36,39,44,42,38,43,47,50,49,53,56],
+  ad_spend:   [7.5,8,8,9,10,11,9.5,8.8,10,12,13,12,13,14],
+
+  budget: [
+    { label:'Google', value:55, color:'#2563EB' },
+    { label:'Meta',   value:34, color:'#6b7280' },
+    { label:'YouTube',value:11, color:'#d1d5db' },
+  ],
+};
+
+/* ────────────────────────────────────────────
+   3. API 呼叫層（後端完成後取消此區塊的註解）
+──────────────────────────────────────────── */
+async function fetchDashboard() {
+  setStatus('loading');
+  try {
+    const res = await fetch(`${API_BASE}/api/dashboard`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    setStatus('connected');
+    return data;
+  } catch (err) {
+    console.warn('API fetch failed, using mock data:', err);
+    setStatus('error');
+    return null;  // fallback to MOCK
+  }
+}
+
+function setStatus(state) {
+  const dot = document.getElementById('status-dot');
+  if (!dot) return;
+  dot.className = 'status-dot ' + state;
+  dot.title = { loading:'數據載入中...', connected:'數據已連線', error:'連線失敗，顯示示範數據' }[state] || '';
+}
+
+/* ────────────────────────────────────────────
+   4. Chart.js 全域設定
+──────────────────────────────────────────── */
+Chart.defaults.font.family = "'Inter', 'Noto Sans TC', system-ui, sans-serif";
+Chart.defaults.color = '#9ca3af';
+
+const CHART_OPTIONS_BASE = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      mode: 'index',
+      intersect: false,
+      bodyFont: { size: 11 },
+      titleFont: { size: 11 },
+    },
+  },
+};
+
+const X_GRID_OFF = { grid: { display: false }, ticks: { font: { size: 10 }, color: '#9ca3af', maxRotation: 0 } };
+const Y_GRID_ON  = { grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false }, ticks: { font: { size: 10 }, color: '#9ca3af' } };
+
+function makeLine(id, datasets, yCallback) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return null;
+  return new Chart(canvas, {
+    type: 'line',
+    data: { labels: DAYS_14, datasets },
+    options: {
+      ...CHART_OPTIONS_BASE,
+      scales: {
+        x: { ...X_GRID_OFF, ticks: { ...X_GRID_OFF.ticks, autoSkip: false, callback: (v, i) => i % 2 === 0 ? DAYS_14[i] : '' } },
+        y: { ...Y_GRID_ON,  ticks: { ...Y_GRID_ON.ticks, callback: yCallback || (v => v >= 1000 ? (v/1000).toFixed(0) + 'K' : v) } },
+      },
+    },
+  });
+}
+
+function makeDonut(id, items) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return null;
+  return new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels: items.map(d => d.label),
+      datasets: [{ data: items.map(d => d.value), backgroundColor: items.map(d => d.color), borderWidth: 0 }],
+    },
+    options: {
+      cutout: '70%',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.parsed + '%' } },
+      },
+    },
+  });
+}
+
+/* ────────────────────────────────────────────
+   5. 渲染函式
+──────────────────────────────────────────── */
+
+/** 建立 Page 0 — 總覽 */
+function buildOverview(data) {
+  // AI 摘要
+  const aiEl = document.getElementById('ai-summary-text');
+  if (aiEl) aiEl.innerHTML = data.ai_summary;
+
+  // KPI 卡片數值更新（若 API 回傳）
+  Object.entries(data.kpis).forEach(([key, d]) => {
+    const el = document.querySelector(`[data-key="${key}"]`);
+    if (el) el.textContent = d.value;
+  });
+
+  // 工作階段趨勢
+  makeLine('c-sess', [
+    { data: data.sessions_trend, borderColor: '#2563EB', borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true, backgroundColor: 'rgba(37,99,235,0.05)' },
+    { data: data.users_trend,    borderColor: '#d1d5db', borderWidth: 1.5, pointRadius: 0, tension: 0.4, borderDash: [4,3] },
+  ]);
+
+  // 流量來源甜甜圈
+  makeDonut('c-src', data.traffic_source);
+
+  // 熱門頁面
+  renderOverviewPages(data.pages.slice(0, 5));
+
+  // 熱門關鍵字
+  renderOverviewKws(data.keywords.slice(0, 5));
+}
+
+/** 熱門頁面列表（總覽用） */
+function renderOverviewPages(pages) {
+  const el = document.getElementById('overview-pages');
+  if (!el) return;
+  const maxViews = pages[0]?.views || 1;
+  el.innerHTML = pages.map(p => {
+    const pct = Math.round((p.views / maxViews) * 100);
+    const isWarn = parseFloat(p.bounce) > 65;
+    return `
+      <li class="url-item" onclick="openModal('modal-page','${p.path}')">
+        <div class="url-path">
+          ${p.path}
+          ${isWarn ? `<span class="badge badge-red" style="margin-left:5px">跳出 ${p.bounce} ⚠</span>` : ''}
+        </div>
+        <div class="url-meta">
+          <span>${p.views.toLocaleString()} 次瀏覽</span>
+          <span>停留 ${p.time}</span>
+          <span>跳出 ${p.bounce}</span>
+        </div>
+        <div class="url-bar-track"><div class="url-bar-fill" style="width:${pct}%;${isWarn?'background:#dc2626':''}"></div></div>
+      </li>`;
+  }).join('');
+}
+
+/** 熱門關鍵字列表（總覽用） */
+function renderOverviewKws(kws) {
+  const el = document.getElementById('overview-kws');
+  if (!el) return;
+  el.innerHTML = kws.map(k => {
+    const rankNum = parseFloat(k.rank.replace('#',''));
+    const isTop = rankNum <= 5;
+    const trendColor = k.trend.startsWith('+') ? 'var(--success)' : k.trend.startsWith('−') ? 'var(--danger)' : 'var(--muted)';
+    return `
+      <div class="kw-row" onclick="openModal('modal-kw','${k.kw}')">
+        <div class="kw-rank ${isTop ? 'top' : ''}">${k.rank}</div>
+        <div class="kw-info">
+          <div class="kw-name">${k.kw}</div>
+          <div class="kw-meta">曝光 ${k.imp.toLocaleString()} · CTR ${k.ctr}</div>
+        </div>
+        <div style="font-size:10px;color:${trendColor}">${k.trend}</div>
+      </div>`;
+  }).join('');
+}
+
+/** 建立 Page 1 — GA4 流量 */
+function buildGA4(data) {
+  // 三線趨勢
+  makeLine('c-ga4trend', [
+    { data: data.sessions_trend,  borderColor: '#2563EB', borderWidth: 2, pointRadius: 0, tension: 0.4 },
+    { data: data.users_trend,     borderColor: '#93c5fd', borderWidth: 1.5, pointRadius: 0, tension: 0.4, borderDash: [3,2] },
+    { data: data.new_users_trend, borderColor: '#d1fae5', borderWidth: 1.5, pointRadius: 0, tension: 0.4, borderDash: [2,2] },
+  ]);
+
+  // 裝置圓環
+  makeDonut('c-device', data.device);
+
+  // 頁面表格
+  renderPagesTable(data.pages);
+}
+
+function renderPagesTable(pages) {
+  const tbody = document.getElementById('pages-tbody');
+  if (!tbody) return;
+  const statusMap = { good: ['badge-green','優良'], warn: ['badge-yellow','普通'], bad: ['badge-red','需優化'] };
+  tbody.innerHTML = pages.map(p => {
+    const [cls, label] = statusMap[p.status] || ['badge-yellow','普通'];
+    const bounceHigh = parseFloat(p.bounce) > 65;
+    return `
+      <tr onclick="openModal('modal-page','${p.path}')">
+        <td>${p.path}</td>
+        <td class="num">${p.views.toLocaleString()}</td>
+        <td class="num">${p.unique.toLocaleString()}</td>
+        <td class="num">${p.time}</td>
+        <td class="num" ${bounceHigh ? 'style="color:var(--danger);font-weight:500"' : ''}>${p.bounce}</td>
+        <td class="num">${p.conv}</td>
+        <td class="num"><span class="badge ${cls}">${label}</span></td>
+      </tr>`;
+  }).join('');
+}
+
+/** 建立 Page 2 — Search Console */
+function buildSC(data) {
+  // 雙軸折線
+  const canvas = document.getElementById('c-ssc');
+  if (canvas) {
+    new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: DAYS_14,
+        datasets: [
+          { data: data.ssc_imp,   borderColor: '#2563EB', borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true, backgroundColor: 'rgba(37,99,235,0.04)', yAxisID: 'y' },
+          { data: data.ssc_click, borderColor: '#16a34a', borderWidth: 2, pointRadius: 0, tension: 0.4, borderDash: [3,2], yAxisID: 'y2' },
+        ],
+      },
+      options: {
+        ...CHART_OPTIONS_BASE,
+        scales: {
+          x:  { ...X_GRID_OFF, ticks: { ...X_GRID_OFF.ticks, autoSkip: false, callback: (v,i) => i%2===0 ? DAYS_14[i] : '' } },
+          y:  { ...Y_GRID_ON,  position: 'left',  ticks: { ...Y_GRID_ON.ticks, callback: v => v>=1000 ? (v/1000).toFixed(0)+'K' : v } },
+          y2: { grid: { display: false }, position: 'right', ticks: { font: { size: 10 }, color: '#9ca3af' } },
+        },
+      },
+    });
+  }
+
+  // 搜尋類型圓環
+  makeDonut('c-sqtype', data.search_type);
+
+  // 關鍵字表格
+  renderKwTable(data.keywords);
+}
+
+function renderKwTable(kws) {
+  const tbody = document.getElementById('kw-tbody');
+  if (!tbody) return;
+  const oppMap = { good: 'badge-green', warn: 'badge-yellow', bad: 'badge-red' };
+  tbody.innerHTML = kws.map(k => {
+    const trendColor = k.trend.startsWith('+') ? 'var(--success)' : k.trend.startsWith('−') ? 'var(--danger)' : 'var(--muted)';
+    return `
+      <tr onclick="openModal('modal-kw','${k.kw}')">
+        <td>${k.kw}</td>
+        <td class="num">${k.imp.toLocaleString()}</td>
+        <td class="num">${k.click.toLocaleString()}</td>
+        <td class="num">${k.ctr}</td>
+        <td class="num">${k.rank}</td>
+        <td class="num" style="color:${trendColor}">${k.trend}</td>
+        <td class="num"><span class="badge ${oppMap[k.opp_type]}">${k.opp}</span></td>
+      </tr>`;
+  }).join('');
+}
+
+/** 建立 Page 3 — 廣告投放 */
+function buildAds(data) {
+  // 花費 vs 收益趨勢
+  makeLine('c-adtrend', [
+    { data: data.ad_revenue, borderColor: '#2563EB', borderWidth: 2, pointRadius: 0, tension: 0.4 },
+    { data: data.ad_spend,   borderColor: '#d1d5db', borderWidth: 1.5, pointRadius: 0, tension: 0.4, borderDash: [4,3] },
+  ], v => '$' + v + 'K');
+
+  // 預算圓環
+  makeDonut('c-budget', data.budget);
+
+  // 渠道表格
+  renderChannelTable(data.channels);
+}
+
+function renderChannelTable(channels) {
+  const tbody = document.getElementById('channel-tbody');
+  if (!tbody) return;
+  const statusMap = { good: ['badge-green','優良'], warn: ['badge-yellow','注意'], bad: ['badge-red','需優化'] };
+  const roasColor = { good: 'var(--success)', warn: 'var(--warning)', bad: 'var(--danger)' };
+  tbody.innerHTML = channels.map(ch => {
+    const [cls, label] = statusMap[ch.status] || ['badge-yellow','注意'];
+    return `
+      <tr onclick="openModal('modal-channel','${ch.name}')">
+        <td>
+          <span class="ch-icon" style="background:${ch.icon_bg};color:${ch.icon_color}">
+            <i class="ti ${ch.icon}" aria-hidden="true"></i>
+          </span>${ch.name}
+        </td>
+        <td class="num">${ch.spend}</td>
+        <td class="num">${ch.imp}</td>
+        <td class="num">${ch.click}</td>
+        <td class="num">${ch.conv}</td>
+        <td class="num">${ch.cpa}</td>
+        <td class="num" style="color:${roasColor[ch.status]};font-weight:500">${ch.roas}</td>
+        <td class="num"><span class="badge ${cls}">${label}</span></td>
+      </tr>`;
+  }).join('');
+}
+
+/** 建立 Page 4 — 串接教學 */
+function buildOnboarding() {
+  const list = document.getElementById('onb-list');
+  if (list) list.innerHTML = ONB_DATA.map(o => `
+    <div class="onb-card ${o.done ? 'done' : ''}" onclick="openModal('modal-onb','${o.id}')">
+      <div class="onb-icon" style="background:${o.icon_bg}">
+        <i class="ti ${o.icon}" style="color:${o.icon_color};font-size:18px" aria-hidden="true"></i>
+      </div>
+      <div class="onb-card-info">
+        <div class="onb-card-title">${o.title}</div>
+        <div class="onb-card-sub">${o.sub}</div>
+      </div>
+      <div class="onb-card-status">
+        ${o.done
+          ? '<span class="badge badge-green">✓ 已完成</span>'
+          : o.optional
+            ? '<span style="font-size:10px;color:var(--text-secondary)">選填</span>'
+            : '<span class="badge badge-yellow">待完成</span>'}
+      </div>
+    </div>`).join('');
+
+  const faqEl = document.getElementById('faq-list');
+  if (faqEl) faqEl.innerHTML = FAQ_DATA.map(f => `
+    <div class="faq-row" onclick="openModal('modal-faq','${f.id}')">
+      <i class="ti ti-question-mark" aria-hidden="true"></i>
+      <div style="flex:1">${f.q}</div>
+      <i class="ti ti-chevron-right" aria-hidden="true" style="font-size:12px;color:var(--muted)"></i>
+    </div>`).join('');
+
+  // 串接資料源 Modal 清單
+  const clist = document.getElementById('connect-list');
+  if (clist) clist.innerHTML = ONB_DATA.map(o => `
+    <div class="onb-card" onclick="closeModal('modal-connect');goTab(4);openModal('modal-onb','${o.id}')">
+      <div class="onb-icon" style="background:${o.icon_bg}">
+        <i class="ti ${o.icon}" style="color:${o.icon_color};font-size:18px" aria-hidden="true"></i>
+      </div>
+      <div class="onb-card-info">
+        <div class="onb-card-title">${o.connect_title || o.title}</div>
+        <div class="onb-card-sub">${o.sub}</div>
+      </div>
+      <i class="ti ti-chevron-right" style="font-size:14px;color:var(--muted);margin-left:auto" aria-hidden="true"></i>
+    </div>`).join('');
+}
+
+/* ────────────────────────────────────────────
+   6. 靜態知識庫（Modal 詳情用）
+──────────────────────────────────────────── */
+const PAGE_DATA = {
+  '/': { views:'12,401', bounce:'38%', time:'3:12', ai:'首頁表現良好，跳出率 38% 屬正常範圍。建議在 Hero 區塊加強 CTA 按鈕可見度，將訪客引導至 /pricing 或 /docs，有機會提升 15–20% 的深度瀏覽率。' },
+  '/pricing': { views:'7,832', bounce:'78% ⚠', time:'1:05', ai:'跳出率 78% 遠高於平均，停留僅 1 分鐘，代表用戶看不到想要的資訊就離開。建議：① 頁面頂部加入「最多人選擇」標籤 ② 加速頁面載入速度至 2 秒內 ③ 加入客戶信任標誌（品牌 Logo、評價）。' },
+  '/blog/ga4-guide': { views:'5,210', bounce:'41%', time:'4:28', ai:'這是全站表現最佳的內容頁，平均停留 4:28 分鐘，代表內容品質高。建議在文章中段加入產品 CTA，把自然流量轉化為試用用戶，預估轉換率可提升 1–2%。' },
+  '/features': { views:'3,980', bounce:'45%', time:'2:50', ai:'功能頁中等表現。建議加入互動式 Demo 或短影片，讓用戶直接體驗功能，可有效降低跳出率並提升轉換意圖。' },
+  '/docs': { views:'2,140', bounce:'33%', time:'5:10', ai:'文件頁停留時間最長（5:10），代表這些都是高意圖用戶。建議在文件頁側邊欄加入「升級 Pro 方案」的 CTA，轉換機會高。' },
+  '/contact': { views:'1,820', bounce:'52%', time:'1:45', ai:'聯絡頁轉換率 8.9% 是全站最高，代表來到這頁的用戶意圖明確。建議加入即時聊天功能，進一步提升回應速度。' },
+  '/blog/seo-tips': { views:'1,540', bounce:'39%', time:'3:55', ai:'SEO 教學文章表現穩定。建議在文章末尾加入「免費下載 SEO 檢查清單」的 Lead Magnet，可有效收集 Email 名單。' },
+};
+
+const KW_DATA = {
+  '數據分析工具':          { rank:'#4.0', ctr:'5.2%', click:'1,477', ai:'排名 #4，距進入 Top 3 還差一步。建議在 /features 頁面增加「數據分析工具」相關的 H1/H2 標題與結構化資料標記，有機會在 4–6 週內衝進 Top 3。' },
+  'GA4 教學':              { rank:'#3.2', ctr:'6.8%', click:'1,306', ai:'CTR 6.8% 非常優秀，代表標題吸引力強。目前排名 #3，建議更新 /blog/ga4-guide 的發布日期並補充 2025 年最新截圖，Google 偏好時效性內容，有機會搶到 #1 精選摘要。' },
+  '網站流量分析':          { rank:'#6.1', ctr:'3.9%', click:'616',   ai:'排名 #6 但點擊率只有 3.9%，代表 Meta Description 不夠吸引人。建議重新撰寫頁面的 SEO 描述，加入數字（如「3分鐘學會分析網站流量」），預計 CTR 可提升至 5–6%。' },
+  'google analytics 設定': { rank:'#12',  ctr:'2.1%', click:'240',   ai:'排名 #12，屬於第二頁，點擊率低。建議新增一篇「Google Analytics 4 完整設定教學 2025」長文，針對此關鍵字優化，有機會在 2 個月內進入第一頁。' },
+  'SEO 工具推薦':          { rank:'#18',  ctr:'1.8%', click:'173',   ai:'目前排名偏低，但搜尋量龐大。建議製作一篇「2025 年 SEO 工具完整比較」的比較文章，包含競品評測，這類文章通常能快速累積外部連結。' },
+  '廣告效益分析':          { rank:'#14',  ctr:'2.2%', click:'158',   ai:'排名有上升趨勢（+2），建議持續優化廣告相關內容頁，加入廣告 ROAS 計算器等互動工具，可大幅提升停留時間與排名。' },
+};
+
+const METRIC_DATA = {
+  '工作階段':       { desc:'「工作階段」是一個用戶在網站上的一次連續造訪，無論他看了幾頁，只要在 30 分鐘內都算一次工作階段。', meaning:'你的網站本週共吸引 38,241 次造訪，比上期成長 9.4%，代表網站流量健康成長中。', improve:'① 增加 SEO 文章產出 ② 加強社群媒體分享 ③ 提高廣告投放預算 ④ 建立 Email 電子報定期召回舊用戶。' },
+  '不重複用戶':     { desc:'在所選時間範圍內，造訪網站的獨立個體數量，同一個人多次造訪只算一位。', meaning:'本週有 28,109 位不同的用戶造訪你的網站，新用戶比例 63.4% 代表超過一半是首次來訪。', improve:'① 優化 SEO 讓更多人透過搜尋找到你 ② 投放付費廣告擴大觸及 ③ 創作值得分享的內容吸引口碑傳播。' },
+  '平均停留時間':   { desc:'用戶在網站上平均花費的時間，時間越長通常代表內容越吸引人。', meaning:'本週平均停留 2 分 34 秒，較上期減少 12 秒，行業平均約 2–3 分鐘，目前處於臨界值需注意。', improve:'① 在文章中加入圖片與影片 ② 內部連結引導用戶繼續閱讀 ③ 頁面載入速度要在 3 秒內 ④ 提升文章深度（建議 1500 字以上）。' },
+  '整體跳出率':     { desc:'「跳出率」是用戶進入網站後只看一頁就離開的比例，越低通常代表網站越吸引人。', meaning:'本週整體跳出率 54.2%，持平。電商理想 30–55%，內容型 60–80%。/pricing 頁面的 78% 需要優先處理。', improve:'① 確保廣告與落地頁內容一致 ② 加快頁面載入速度 ③ 在頁面底部加入「延伸閱讀」推薦 ④ 改善 CTA 可見度。' },
+  '新用戶比例':     { desc:'首次造訪你網站的用戶佔總用戶的比例。', meaning:'新用戶佔 63.4%，代表你的品牌正在持續觸及新的潛在客戶，成長動能健康。', improve:'① 增加 SEO 文章觸及更多搜尋 ② 擴大廣告受眾範圍 ③ 媒體曝光與公關合作 ④ 社群媒體定期發文。' },
+  '轉換率':         { desc:'轉換率 = 完成目標行為的工作階段 ÷ 總工作階段，代表流量中有多少比例採取了期望行動。', meaning:'本週轉換率 3.82%，提升 0.4%，高於電商平均（1–3%），代表網站品質與受眾精準度都不錯。', improve:'① 在關鍵頁面增加社會證明 ② 提供限時優惠 ③ 優化表單欄位數量（越少越好） ④ 確保行動版體驗流暢。' },
+  '每次工作階段頁數':{ desc:'每次工作階段平均瀏覽的頁面數量，代表用戶在網站內的探索深度。', meaning:'每次工作階段平均瀏覽 3.2 頁，持平。代表用戶不只看了入口頁，還主動探索了其他頁面。', improve:'① 在每篇文章底部加入「延伸閱讀」 ② 使用相關產品推薦 ③ 在頁面中加入內部連結。' },
+  '目標完成次數':   { desc:'用戶完成你在 GA4 中設定的具體目標次數，例如點擊電話、填寫表單等。', meaning:'本週目標完成 1,462 次，成長 7.8%，代表越來越多用戶在網站上採取了有價值的行動。', improve:'① 確保 GA4 中正確追蹤所有重要行為 ② 在轉換路徑中減少摩擦點 ③ 針對高意圖頁面優化 CTA 設計。' },
+  '搜尋曝光':       { desc:'你的網站在 Google 搜尋結果中被看到的次數，即使用戶沒有點擊也算。', meaning:'本週曝光 182,000 次，成長 12%，代表 Google 越來越認可你的網站內容。', improve:'① 持續新增高品質 SEO 內容 ② 針對排名 6–10 名的關鍵字加強優化 ③ 建立外部連結提升網域權重。' },
+  '自然點擊':       { desc:'用戶在 Google 搜尋結果中看到你的網站後，實際點擊進入的次數（不含廣告）。', meaning:'本週自然點擊 6,921 次，成長 9%。自然流量是最有價值的流量來源，獲取成本為零。', improve:'① 優化每個頁面的 Title Tag（60字內）② 撰寫吸引人的 Meta Description ③ 爭取「精選摘要」位置。' },
+  '平均點擊率':     { desc:'CTR = 點擊次數 ÷ 曝光次數，代表看到你的網站後有多少比例的人會點擊。', meaning:'本週平均 CTR 3.8%，Google 整體平均約 2–3%，你目前略高於平均，代表標題與描述對用戶有吸引力。', improve:'① 標題加入吸睛數字 ② 加入情感字眼（免費、完整、快速）③ 使用結構化資料標記（Schema）。' },
+  '平均排名':       { desc:'你的網站在 Google 搜尋結果中的平均位置，越接近 1 代表越靠前。', meaning:'本週平均排名 #4.2，較上期改善 0.8。一般排名 1–3 獲得約 70% 的點擊，4–10 獲得約 20%。', improve:'① 針對特定關鍵字優化對應頁面 ② 提升 Core Web Vitals ③ 增加高品質外部連結 ④ 確保內容更新頻率。' },
+  '廣告花費':       { desc:'所有廣告平台在選定期間內的總花費金額。', meaning:'本週廣告總花費 $124,500，較上期增加 12%。花費增加但收益只成長 8%，廣告效益略有下滑需注意。', improve:'① 暫停表現差的廣告（ROAS < 2×）② 提高預算給表現好的廣告（ROAS > 4×）③ 優化廣告創意降低 CPM。' },
+  '廣告收益':       { desc:'透過廣告帶來的轉換所產生的總收益金額。', meaning:'本週廣告收益 $450,200，成長 8%，整體 ROAS 3.61× 代表每投入 $1 廣告費用可帶回 $3.61 收益。', improve:'① 優化落地頁轉換率 ② 提升客單價（AOV）③ 針對高 LTV 受眾加強再行銷。' },
+  '整體ROAS':       { desc:'ROAS = 廣告收益 ÷ 廣告花費，代表每花 $1 廣告費可帶回多少收益。', meaning:'整體 ROAS 3.61× 在健康範圍，但需注意 Meta 的 ROAS 已降至 2.8×，Google Ads 4.2× 表現最佳。', improve:'① 重新分配預算給高 ROAS 渠道 ② 優化廣告受眾 ③ 提升網站轉換率（CRO）。' },
+  '轉換次數':       { desc:'用戶完成目標行為的次數，例如購買、填表、加入購物車等。', meaning:'本週轉換 1,842 次，成長 6.1%，代表廣告有效將流量轉化為實際行動。', improve:'① 簡化結帳/填表流程 ② 加入即時聊天客服 ③ 使用退場意圖 Pop-up 挽留用戶 ④ A/B 測試 CTA 按鈕。' },
+  '平均CPC':        { desc:'CPC = 廣告花費 ÷ 點擊次數，每次廣告點擊的平均成本。', meaning:'本週平均 CPC $1.84，較上期降低 8%，代表廣告競爭效率提升，同樣預算可獲得更多點擊。', improve:'① 提升廣告品質分數 ② 使用長尾關鍵字 ③ 優化廣告文案提升 CTR ④ 選擇競爭較低的投放時段。' },
+  '平均CPA':        { desc:'CPA = 廣告花費 ÷ 轉換次數，每獲得一次轉換的平均成本。', meaning:'本週平均 CPA $67.6，較上期降低 18%，是本週廣告表現最佳的指標，用更少的錢獲得同樣的轉換。', improve:'① 優先投放 CPA 最低的廣告組合 ② 暫停 CPA 最高的渠道（YouTube $114.8）③ 測試目標 CPA 智慧出價。' },
+  '廣告印象':       { desc:'廣告被展示的總次數，包含所有平台的曝光。', meaning:'本週廣告總曝光 2.61M 次，成長 14%，代表品牌觸及範圍在擴大。', improve:'① 優先選擇目標受眾重疊度低的平台 ② 使用再行銷廣告接觸高意圖用戶 ③ 測試不同廣告格式找到 CPM 最低的形式。' },
+};
+
+const CHANNEL_DATA = {
+  'Google Ads':  { roas:'4.2×', cpa:'$59.8',  conv:'1,140', ai:'Google Ads 本週表現最佳，ROAS 4.2× 遠高於整體平均 3.61×。建議將 Meta Ads 節省的預算 50% 轉移至 Google Ads，優先加碼「搜尋廣告」中的品牌詞與競品詞，預估 ROAS 可進一步提升至 4.5×。' },
+  'Meta Ads':    { roas:'2.8×', cpa:'$72.9',  conv:'580',   ai:'Meta Ads ROAS 從上週 3.2× 降至 2.8×，觸發警告。可能原因：① 受眾疲勞（廣告素材需要更換）② 受眾重疊度過高 ③ iOS 隱私政策影響歸因。建議更換廣告素材、縮小受眾年齡層，並開啟「Advantage+ 受眾」自動優化。' },
+  'YouTube Ads': { roas:'1.9×', cpa:'$114.8', conv:'122',   ai:'YouTube ROAS 1.9× 低於損益平衡點，是本週拖累整體效益的主因。建議：① 暫停表現最差的廣告組合 ② 將預算減少 50%（約 $7,000）③ 把省下的預算轉移給 Google Ads。YouTube 廣告適合品牌認知目的而非直接轉換，需重新定義 KPI。' },
+};
+
+const ONB_DATA = [
+  { id:'ga4',  icon:'ti-brand-google', icon_bg:'#EFF6FF', icon_color:'#1d4ed8', title:'步驟 1：串接 Google Analytics 4（GA4）',    connect_title:'Google Analytics 4', sub:'取得網站流量、用戶行為、轉換率數據', done:true,  optional:false,
+    steps:[
+      { t:'前往 Google Analytics',       d:'打開瀏覽器，進入 analytics.google.com，使用你管理網站的 Google 帳號登入。', tag:'✓ 已完成' },
+      { t:'確認使用 GA4 版本',           d:'在左側選單確認你在「GA4 屬性」中（不是舊版 Universal Analytics）。', tag:'✓ 已完成' },
+      { t:'複製你的「評估 ID」',         d:'點擊左下角「管理」→「資料串流」→ 點擊你的網站串流 → 複製右上角的「評估 ID」（格式：G-XXXXXXXXXX）。', tag:'✓ 已完成' },
+      { t:'貼入 Dashboard 設定',         d:'點擊右上角「串接資料源」→ 選擇 GA4 → 將複製的評估 ID 貼入欄位中，系統會自動驗證並開始抓取數據。', tag:'✓ 已完成' },
+    ]},
+  { id:'gsc',  icon:'ti-search',        icon_bg:'#F0FDF4', icon_color:'#16a34a', title:'步驟 2：串接 Google Search Console',          connect_title:'Google Search Console', sub:'取得自然搜尋排名、關鍵字、點擊率數據', done:false, optional:false,
+    steps:[
+      { t:'前往 Google Search Console',  d:'打開 search.google.com/search-console，使用網站管理員的 Google 帳號登入。', tag:'需要 5 分鐘' },
+      { t:'確認你的網站已驗證',          d:'在左側選單能看到你的網站 URL，且狀態顯示「已驗證」。如果尚未驗證，點擊「新增資源」，依指示複製 HTML 標記貼到網站首頁的 <head> 中。', tag:'不需工程師' },
+      { t:'確認數據已累積',              d:'Search Console 需要一些時間才會有數據。如果是新驗證的網站，最快 48 小時後才會出現點擊與曝光數據，請耐心等待。', tag:'最快 48 小時' },
+      { t:'使用 Google 帳號授權',        d:'回到本 Dashboard，點擊「串接資料源」→ 選擇 Search Console → 使用 Google 帳號授權即可，系統會自動抓取你帳號下所有已驗證的網站數據。', tag:'一鍵授權' },
+    ]},
+  { id:'gads', icon:'ti-speakerphone',  icon_bg:'#FFFBEB', icon_color:'#d97706', title:'步驟 3：串接 Google Ads（選填）',              connect_title:'Google Ads', sub:'取得關鍵字廣告花費、ROAS、轉換成本', done:false, optional:true,
+    steps:[
+      { t:'確認你有 Google Ads 帳戶',    d:'前往 ads.google.com，確認你有正在投放廣告的帳戶。如果沒有，可以先跳過此步驟。', tag:'選填步驟' },
+      { t:'找到你的「客戶 ID」',         d:'登入 Google Ads 後，在右上角會看到格式為 XXX-XXX-XXXX 的「客戶 ID」，複製這個數字。', tag:'30 秒完成' },
+      { t:'在 Google Ads 授權 API 存取', d:'進入「工具與設定」→「API 中心」→ 接受開發人員授權條款，這樣才能讓 Dashboard 讀取你的廣告數據。', tag:'一次性設定' },
+      { t:'貼入 Dashboard 完成串接',     d:'點擊「串接資料源」→ 選擇 Google Ads → 輸入客戶 ID，使用 Google 帳號授權後即完成。', tag:'一鍵授權' },
+    ]},
+  { id:'meta', icon:'ti-brand-facebook',icon_bg:'#F5F3FF', icon_color:'#6d28d9', title:'步驟 4：串接 Meta Ads（選填）',                connect_title:'Meta Ads (FB/IG)', sub:'取得 Facebook/Instagram 廣告 ROAS、受眾觸及', done:false, optional:true,
+    steps:[
+      { t:'確認你有 Meta 商業管理平台帳號', d:'前往 business.facebook.com，使用你投放廣告的 Facebook 帳號登入。Meta 廣告必須透過「商業管理平台」管理才能串接。', tag:'選填步驟' },
+      { t:'找到你的「廣告帳號 ID」',     d:'在商業管理平台左側點選「廣告帳號」，複製廣告帳號 ID（格式：act_XXXXXXXXXXXXXXX）。', tag:'30 秒完成' },
+      { t:'建立「系統用戶」並取得存取權杖', d:'「設定」→「系統用戶」→「新增系統用戶」→ 授予廣告帳號「分析師」權限 → 點擊「產生新 Token」並複製。', tag:'最複雜的步驟' },
+      { t:'貼入 Dashboard 完成串接',     d:'點擊「串接資料源」→ 選擇 Meta Ads → 輸入廣告帳號 ID 與 Access Token，點擊「驗證並儲存」即完成。', tag:'約 10 分鐘' },
+    ]},
+];
+
+const FAQ_DATA = [
+  { id:'ga4-id',       q:'什麼是 GA4 的「評估 ID」？在哪裡找？',         title:'GA4 評估 ID 在哪裡找？',         body:'GA4 評估 ID 的格式是 G-XXXXXXXXXX，在 Google Analytics 後台以下路徑找到：\n\n① 登入 analytics.google.com\n② 點擊左下角「管理」（齒輪圖示）\n③ 在「資料收集和修改」欄位點擊「資料串流」\n④ 點擊你的網站名稱\n⑤ 右上角顯示的「評估 ID」就是你需要的。\n\n格式範例：G-ABC12345XY' },
+  { id:'service-acc',  q:'什麼是「服務帳戶金鑰」？我需要技術能力嗎？',   title:'需要服務帳戶金鑰嗎？',           body:'不需要！本 Dashboard 採用「OAuth 授權」的方式串接，你只需要點擊「使用 Google 帳號登入」按鈕，系統會自動取得你帳號下的數據存取權限，完全不需要下載任何金鑰檔案，也不需要技術背景。' },
+  { id:'data-safe',    q:'我的數據安全嗎？會被看到嗎？',                   title:'我的數據安全嗎？',               body:'你的數據安全有以下幾個保障：\n\n① 唯讀存取：我們只申請「讀取」權限，無法修改你的廣告或網站任何設定。\n② 不儲存原始數據：我們只儲存彙整後的統計數字，不儲存個別用戶的資料。\n③ OAuth 標準授權：採用 Google/Meta 的官方授權機制，你可以隨時在 Google 帳號設定中撤銷我們的存取權限。\n④ 符合 GDPR / 個資法。' },
+  { id:'update-freq',  q:'數據多久更新一次？是即時的嗎？',                 title:'數據多久更新一次？',             body:'不同數據源的更新頻率不同：\n\n・GA4 流量數據：約 24–48 小時延遲\n・Search Console 數據：約 2–3 天延遲\n・Google Ads：約 3 小時延遲\n・Meta Ads：約 1 小時延遲\n\n本 Dashboard 會每天早上 8:00 自動抓取最新數據，你也可以手動點擊重新整理觸發更新。' },
+];
+
+/* ────────────────────────────────────────────
+   7. 頁籤切換
+──────────────────────────────────────────── */
+const BUILT = { p1: false, p2: false, p3: false, p4: false };
+
+function goTab(idx) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('on', i === idx);
+    t.setAttribute('aria-selected', i === idx);
+  });
+  document.querySelectorAll('.page').forEach((p, i) => p.classList.toggle('on', i === idx));
+
+  const data = DASHBOARD_DATA || MOCK;
+  if (idx === 1 && !BUILT.p1) { buildGA4(data); BUILT.p1 = true; }
+  if (idx === 2 && !BUILT.p2) { buildSC(data);  BUILT.p2 = true; }
+  if (idx === 3 && !BUILT.p3) { buildAds(data); BUILT.p3 = true; }
+  if (idx === 4 && !BUILT.p4) { buildOnboarding(); BUILT.p4 = true; }
+}
+
+/* ────────────────────────────────────────────
+   8. Seg Control（圖表切換）
+──────────────────────────────────────────── */
+function switchSeg(btn, chartId, range) {
+  btn.closest('.seg-ctrl').querySelectorAll('.seg-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  // TODO: 後端完成後，依 range 重新 fetch 並更新圖表
+  console.log(`Switch ${chartId} to ${range} days`);
+}
+
+/* ────────────────────────────────────────────
+   9. Modal 控制
+──────────────────────────────────────────── */
+let pageTrendChart = null;
+
+function openModal(id, param) {
+  document.getElementById(id).classList.add('show');
+
+  if (id === 'modal-page' && param) {
+    const d = PAGE_DATA[param] || { views: '—', bounce: '—', time: '—', ai: '找不到此頁面的分析資料。' };
+    document.getElementById('mp-title').textContent = '頁面詳情：' + param;
+    document.getElementById('mp-views').textContent = d.views;
+    document.getElementById('mp-bounce').textContent = d.bounce;
+    document.getElementById('mp-time').textContent = d.time;
+    document.getElementById('mp-ai').textContent = d.ai;
+    document.getElementById('mp-ai-btn').onclick = () => sendPrompt('針對頁面 ' + param + ' 給我詳細的優化建議，包含具體的內容與程式碼修改方向');
+    setTimeout(() => {
+      const canvas = document.getElementById('c-page-trend');
+      if (!canvas) return;
+      if (pageTrendChart) { pageTrendChart.destroy(); pageTrendChart = null; }
+      pageTrendChart = new Chart(canvas, {
+        type: 'line',
+        data: {
+          labels: ['週一','週二','週三','週四','週五','週六','週日'],
+          datasets: [{
+            data: Array.from({ length: 7 }, () => Math.round(800 + Math.random() * 1200)),
+            borderColor: '#2563EB', borderWidth: 2, pointRadius: 0, tension: 0.4,
+            fill: true, backgroundColor: 'rgba(37,99,235,0.05)',
+          }],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { x: X_GRID_OFF, y: Y_GRID_ON },
+        },
+      });
+    }, 80);
+  }
+
+  if (id === 'modal-kw' && param) {
+    const d = KW_DATA[param] || { rank: '—', ctr: '—', click: '—', ai: '找不到此關鍵字的分析資料。' };
+    document.getElementById('mkw-title').textContent = '關鍵字：' + param;
+    document.getElementById('mkw-rank').textContent = d.rank;
+    document.getElementById('mkw-ctr').textContent = d.ctr;
+    document.getElementById('mkw-click').textContent = d.click;
+    document.getElementById('mkw-ai').textContent = d.ai;
+    document.getElementById('mkw-ai-btn').onclick = () => sendPrompt('針對關鍵字「' + param + '」提供完整的 SEO 優化策略，包含內容架構、標題優化和連結建設建議');
+  }
+
+  if (id === 'modal-metric' && param) {
+    const d = METRIC_DATA[param] || { desc: '說明尚未建立。', meaning: '—', improve: '—' };
+    document.getElementById('mm-title').textContent = '指標說明：' + param;
+    document.getElementById('mm-desc').textContent = d.desc;
+    document.getElementById('mm-meaning').textContent = d.meaning;
+    document.getElementById('mm-improve').textContent = d.improve;
+  }
+
+  if (id === 'modal-channel' && param) {
+    const d = CHANNEL_DATA[param] || { roas: '—', cpa: '—', conv: '—', ai: '找不到此渠道的分析資料。' };
+    document.getElementById('mch-title').textContent = param + ' 詳情';
+    document.getElementById('mch-roas').textContent = d.roas;
+    document.getElementById('mch-cpa').textContent = d.cpa;
+    document.getElementById('mch-conv').textContent = d.conv;
+    document.getElementById('mch-ai').textContent = d.ai;
+    document.getElementById('mch-btn').onclick = () => sendPrompt('針對 ' + param + ' 的廣告效益，提供具體的優化方案與預算建議');
+  }
+
+  if (id === 'modal-onb' && param) {
+    const o = ONB_DATA.find(x => x.id === param);
+    if (!o) return;
+    document.getElementById('monb-title').textContent = o.title;
+    document.getElementById('monb-steps').innerHTML = o.steps.map((s, i) => `
+      <li>
+        <div>
+          <div class="step-title">${s.t}</div>
+          <div class="step-desc">${s.d}</div>
+          <span class="step-tag">${s.tag}</span>
+        </div>
+      </li>`).join('');
+  }
+
+  if (id === 'modal-faq' && param) {
+    const f = FAQ_DATA.find(x => x.id === param);
+    if (!f) return;
+    document.getElementById('mfaq-title').textContent = f.title;
+    document.getElementById('mfaq-body').innerHTML = f.body.replace(/\n/g, '<br>');
+  }
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+function closeOnBg(event, id) {
+  if (event.target === document.getElementById(id)) closeModal(id);
+}
+
+/* ────────────────────────────────────────────
+   10. Keyboard support (Escape 關閉 Modal)
+──────────────────────────────────────────── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-bg.show').forEach(m => m.classList.remove('show'));
+  }
+});
+
+/* ────────────────────────────────────────────
+   11. 初始化
+──────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', async () => {
+  const apiData = await fetchDashboard();
+  DASHBOARD_DATA = apiData || MOCK;
+  buildOverview(DASHBOARD_DATA);
+  buildOnboarding();      // Page 4 的靜態內容可以直接建立
+});

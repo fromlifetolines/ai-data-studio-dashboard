@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Step 1 — GA4 串接教學</title>
+  <link rel="stylesheet" href="onboarding.css">
+</head>
+<body>
+
+<div class="onboarding-container">
+  <a href="index.html" class="back-link">← 返回教學首頁</a>
+
+  <header class="onboarding-header">
+    <h1>GA4 串接教學</h1>
+    <p>將 Google Analytics 4 數據導入 AI Data Studio</p>
+  </header>
+
+  <div class="progress-bar">
+    <div class="progress-step active"><span class="progress-dot">1</span> GA4</div>
+    <div class="progress-line"></div>
+    <div class="progress-step"><span class="progress-dot">2</span> GSC</div>
+    <div class="progress-line"></div>
+    <div class="progress-step"><span class="progress-dot">3</span> Google Ads</div>
+    <div class="progress-line"></div>
+    <div class="progress-step"><span class="progress-dot">4</span> Meta</div>
+  </div>
+
+  <div class="step-card">
+    <h2>Google Analytics 4 授權步驟</h2>
+    <p class="step-desc">完成以下 5 個步驟，即可在 Dashboard 看到真實 GA4 數據。</p>
+
+    <ol class="step-list">
+      <li>
+        <div>
+          <strong>建立 GCP 專案</strong>
+          <p>前往 <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a>，建立新專案（或使用現有專案）。</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>啟用 Google Analytics Data API</strong>
+          <p>在 GCP 專案中，搜尋並啟用 <code>Google Analytics Data API</code>。</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>建立 Service Account 金鑰</strong>
+          <p>IAM → Service Accounts → 建立帳戶 → 金鑰 → 新增 JSON 金鑰。<br>
+          將下載的 JSON 檔重新命名為 <code>service-account.json</code>，放入專案的 <code>credentials/</code> 資料夾。</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>在 GA4 中授權 Service Account</strong>
+          <p>GA4 管理 → 資源存取管理 → 新增使用者 → 貼上 Service Account 的 email（格式：<code>xxx@xxx.iam.gserviceaccount.com</code>）→ 角色選「檢視者」。</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong>設定 Property ID</strong>
+          <p>GA4 管理 → 資源設定 → 複製「資源 ID」（純數字）。<br>
+          在專案根目錄建立 <code>.env</code> 檔案，加入：<br>
+          <code>GA4_PROPERTY_ID=你的資源ID</code></p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="tip-box">
+      <strong>💡 小提示</strong>
+      完成後重新啟動後端伺服器，Dashboard 右上角的狀態會從「Demo Mode」變成「Live Data」。
+    </div>
+
+    <div class="step-nav">
+      <a href="index.html" class="btn btn-outline">← 上一步</a>
+      <a href="step2-gsc.html" class="btn btn-primary">下一步：Search Console →</a>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
