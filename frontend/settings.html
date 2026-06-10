@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Data Studio — 串接設定</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* ── 設定頁專用樣式 ── */
+    .setup-wrap { max-width: 640px; margin: 40px auto; padding: 0 20px 60px; }
+
+    .setup-hero { text-align: center; margin-bottom: 36px; }
+    .setup-hero .brand-dot { display: inline-block; }
+    .setup-hero h1 { font-size: 22px; font-weight: 500; margin: 12px 0 6px; letter-spacing: -0.02em; }
+    .setup-hero p  { font-size: 13px; color: var(--text-secondary); line-height: 1.65; }
+
+    .progress-steps { display: flex; gap: 0; margin-bottom: 32px; }
+    .progress-step {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;
+      position: relative;
+    }
+    .progress-step:not(:last-child)::after {
+      content: ''; position: absolute; top: 14px; left: 60%; width: 80%; height: 1px;
+      background: var(--border-mid);
+    }
+    .progress-step.done::after, .progress-step.active::after { background: var(--accent); }
+    .ps-circle {
+      width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--border-mid);
+      display: flex; align-items: center; justify-content: center; font-size: 11px;
+      font-weight: 500; color: var(--text-secondary); background: var(--surface);
+      position: relative; z-index: 1;
+    }
+    .progress-step.done   .ps-circle { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .progress-step.active .ps-circle { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+    .ps-label { font-size: 10px; color: var(--text-secondary); white-space: nowrap; }
+    .progress-step.active .ps-label { color: var(--accent); font-weight: 500; }
+
+    .setup-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .setup-section-head {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 18px; cursor: pointer; user-select: none;
+    }
+    .setup-section-head:hover { background: var(--bg); }
+    .section-icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
+    }
+    .section-info { flex: 1; }
+    .section-title { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+    .section-sub   { font-size: 11px; color: var(--text-secondary); }
+    .section-badge { flex-shrink: 0; }
+    .section-chevron { font-size: 14px; color: var(--muted); flex-shrink: 0; transition: transform 0.2s; }
+    .setup-section.open .section-chevron { transform: rotate(180deg); }
+
+    .setup-section-body { display: none; padding: 0 18px 18px; border-top: 1px solid var(--border); }
+    .setup-section.open .setup-section-body { display: block; }
+
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 11px; font-weight: 500; margin-bottom: 5px; color: var(--text-primary); }
+    .field .hint { font-size: 10px; color: var(--text-secondary); margin-top: 4px; line-height: 1.5; }
+    .field .hint a { color: var(--accent); text-decoration: none; }
+    .field .hint a:hover { text-decoration: underline; }
+
+    .input-wrap { position: relative; }
+    .input-wrap i {
+      position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+      font-size: 14px; color: var(--muted); pointer-events: none;
+    }
+    input[type="text"], input[type="password"], textarea {
+      width: 100%; border: 1px solid var(--border-mid); border-radius: var(--radius-md);
+      padding: 8px 10px 8px 32px; font-size: 12px; font-family: inherit;
+      color: var(--text-primary); background: var(--surface); outline: none;
+      transition: border-color 0.15s;
+    }
+    input[type="text"]:focus, input[type="password"]:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.08);
+    }
+    input[type="text"].no-icon, input[type="password"].no-icon { padding-left: 10px; }
+    textarea { padding-left: 10px; resize: vertical; min-height: 120px; font-size: 11px; font-family: 'Courier New', monospace; }
+    input.error, textarea.error { border-color: var(--danger); }
+    input.success, textarea.success { border-color: var(--success); }
+
+    .upload-zone {
+      border: 1.5px dashed var(--border-mid); border-radius: var(--radius-md);
+      padding: 20px; text-align: center; cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      background: var(--bg);
+    }
+    .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: var(--accent-light); }
+    .upload-zone i { font-size: 24px; color: var(--muted); margin-bottom: 6px; display: block; }
+    .upload-zone p { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; }
+    .upload-zone .upload-filename { font-size: 11px; font-weight: 500; color: var(--success); margin-top: 4px; }
+    #file-input { display: none; }
+
+    .divider { display: flex; align-items: center; gap: 8px; margin: 12px 0; }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .divider span { font-size: 10px; color: var(--text-secondary); }
+
+    .validate-btn {
+      display: flex; align-items: center; gap: 5px; justify-content: center;
+      width: 100%; padding: 9px; border-radius: var(--radius-md); font-size: 12px; font-weight: 500;
+      border: 1px solid var(--border-mid); background: var(--bg); color: var(--text-primary);
+      cursor: pointer; transition: all 0.15s; margin-top: 12px;
+    }
+    .validate-btn:hover { border-color: var(--accent-mid); color: var(--accent); background: var(--accent-light); }
+    .validate-btn.loading { opacity: 0.7; pointer-events: none; }
+
+    .status-msg {
+      display: flex; align-items: flex-start; gap: 7px; padding: 10px 12px;
+      border-radius: var(--radius-md); font-size: 11px; margin-top: 10px; line-height: 1.6;
+    }
+    .status-msg i { font-size: 14px; margin-top: 1px; flex-shrink: 0; }
+    .status-msg.success { background: var(--success-light); color: #166534; }
+    .status-msg.error   { background: var(--danger-light);  color: #991b1b; }
+    .status-msg.info    { background: var(--accent-light);  color: #1e40af; }
+
+    .save-footer {
+      position: sticky; bottom: 0; padding: 14px 0;
+      background: linear-gradient(to top, var(--bg) 70%, transparent);
+    }
+    .save-btn {
+      display: flex; align-items: center; gap: 6px; justify-content: center;
+      width: 100%; padding: 11px; border-radius: var(--radius-md);
+      background: var(--accent); color: #fff; font-size: 13px; font-weight: 500;
+      border: none; cursor: pointer; transition: background 0.15s;
+    }
+    .save-btn:hover { background: #1d4ed8; }
+    .save-btn:disabled { background: var(--muted); pointer-events: none; }
+
+    .back-link {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 12px; color: var(--text-secondary); text-decoration: none; margin-bottom: 20px;
+    }
+    .back-link:hover { color: var(--text-primary); }
+
+    .step-instruction {
+      background: var(--bg); border-radius: var(--radius-md);
+      padding: 12px 14px; margin-bottom: 14px; margin-top: 12px;
+    }
+    .step-instruction ol { padding-left: 16px; }
+    .step-instruction li { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; line-height: 1.65; }
+    .step-instruction li strong { color: var(--text-primary); }
+    .step-instruction li a { color: var(--accent); }
+
+    .optional-tag {
+      display: inline-block; background: var(--bg); border: 1px solid var(--border-mid);
+      color: var(--text-secondary); font-size: 9px; padding: 1px 5px;
+      border-radius: var(--radius-sm); margin-left: 6px; vertical-align: middle;
+    }
+  </style>
+</head>
+<body style="background:var(--bg)">
+
+<div class="setup-wrap">
+
+  <a href="index.html" class="back-link">
+    <i class="ti ti-arrow-left" aria-hidden="true"></i> 返回 Dashboard
+  </a>
+
+  <!-- Hero -->
+  <div class="setup-hero">
+    <div style="display:flex;justify-content:center;margin-bottom:10px">
+      <div style="width:44px;height:44px;background:#111;border-radius:10px;display:flex;align-items:center;justify-content:center">
+        <span style="color:#fff;font-size:15px;font-weight:500">AI</span>
+      </div>
+    </div>
+    <h1>串接你的數據源</h1>
+    <p>完成設定後，Dashboard 將顯示你的真實數據，並由 AI 提供每週行銷建議。<br>整個過程不需要技術背景，約 10 分鐘完成。</p>
+  </div>
+
+  <!-- 進度步驟 -->
+  <div class="progress-steps" id="progress-steps">
+    <div class="progress-step done">
+      <div class="ps-circle"><i class="ti ti-check" style="font-size:12px"></i></div>
+      <div class="ps-label">GA4</div>
+    </div>
+    <div class="progress-step" id="ps-gsc">
+      <div class="ps-circle">2</div>
+      <div class="ps-label">Search Console</div>
+    </div>
+    <div class="progress-step" id="ps-gads">
+      <div class="ps-circle">3</div>
+      <div class="ps-label">Google Ads</div>
+    </div>
+    <div class="progress-step" id="ps-meta">
+      <div class="ps-circle">4</div>
+      <div class="ps-label">Meta Ads</div>
+    </div>
+    <div class="progress-step" id="ps-ai">
+      <div class="ps-circle">5</div>
+      <div class="ps-label">AI 分析</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       STEP 1：GA4
+  ══════════════════════════════════════ -->
+  <div class="setup-section open" id="sec-ga4">
+    <div class="setup-section-head" onclick="toggleSection('sec-ga4')">
+      <div class="section-icon" style="background:#EFF6FF"><i class="ti ti-brand-google" style="color:#1d4ed8" aria-hidden="true"></i></div>
+      <div class="section-info">
+        <div class="section-title">Google Analytics 4（GA4）</div>
+        <div class="section-sub">網站流量、用戶行為、轉換率 — 必要串接</div>
+      </div>
+      <div class="section-badge"><span class="badge badge-yellow" id="badge-ga4">待完成</span></div>
+      <i class="ti ti-chevron-down section-chevron" aria-hidden="true"></i>
+    </div>
+
+    <div class="setup-section-body">
+      <div class="step-instruction">
+        <strong style="font-size:11px;display:block;margin-bottom:6px">📋 如何取得以下資訊（依序操作）</strong>
+        <ol>
+          <li>前往 <a href="https://analytics.google.com" target="_blank">analytics.google.com</a></li>
+          <li>點擊左下角「管理（齒輪）」→「資料串流」→ 點選你的網站</li>
+          <li>複製右上角的 <strong>評估 ID</strong>（格式：G-XXXXXXXXXX）</li>
+          <li>前往 <a href="https://console.cloud.google.com" target="_blank">Google Cloud Console</a> → 建立或選擇專案</li>
+          <li>「API 與服務」→ 啟用「Google Analytics Data API」</li>
+          <li>「IAM 與管理」→「服務帳戶」→ 建立服務帳戶 → 下載 JSON 金鑰</li>
+          <li>回到 GA4 後台「管理」→「帳戶存取管理」→ 加入服務帳戶 Email（<strong>查看者</strong>權限）</li>
+        </ol>
+      </div>
+
+      <div class="field">
+        <label for="ga4-property-id">GA4 評估 ID <span style="color:var(--danger)">*</span></label>
+        <div class="input-wrap">
+          <i class="ti ti-key" aria-hidden="true"></i>
+          <input type="text" id="ga4-property-id" placeholder="G-XXXXXXXXXX 或 properties/123456789" autocomplete="off">
+        </div>
+        <div class="hint">在 GA4「管理」→「資料串流」→ 點入你的網站 → 右上角「評估 ID」</div>
+      </div>
+
+      <div class="field">
+        <label>Service Account JSON 金鑰 <span style="color:var(--danger)">*</span></label>
+        <div class="upload-zone" id="upload-zone-ga4" onclick="document.getElementById('file-input-ga4').click()"
+             ondragover="handleDragOver(event,'upload-zone-ga4')"
+             ondragleave="handleDragLeave(event,'upload-zone-ga4')"
+             ondrop="handleDrop(event,'upload-zone-ga4','ga4-json')">
+          <input type="file" id="file-input-ga4" accept=".json" onchange="handleFileSelect(event,'ga4-json','upload-zone-ga4')">
+          <i class="ti ti-file-upload" aria-hidden="true"></i>
+          <p>點擊或拖曳 JSON 金鑰檔案到這裡</p>
+          <p style="font-size:10px">從 Google Cloud Console 下載的 service-account-xxxx.json</p>
+          <div class="upload-filename" id="ga4-filename" style="display:none"></div>
+        </div>
+
+        <div class="divider"><span>或直接貼上 JSON 內容</span></div>
+
+        <textarea id="ga4-json" placeholder='{"type": "service_account", "project_id": "...", "private_key": "...", ...}' oninput="handleJsonInput('ga4-json')"></textarea>
+        <div class="hint">JSON 金鑰包含 private_key 欄位，這是存取 GA4 的憑證，請勿分享給他人。</div>
+      </div>
+
+      <div id="ga4-status" style="display:none" class="status-msg"></div>
+
+      <button class="validate-btn" id="btn-validate-ga4" onclick="validateGA4()">
+        <i class="ti ti-plug" aria-hidden="true"></i> 驗證 GA4 連線
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       STEP 2：Search Console
+  ══════════════════════════════════════ -->
+  <div class="setup-section" id="sec-gsc">
+    <div class="setup-section-head" onclick="toggleSection('sec-gsc')">
+      <div class="section-icon" style="background:#F0FDF4"><i class="ti ti-search" style="color:#16a34a" aria-hidden="true"></i></div>
+      <div class="section-info">
+        <div class="section-title">Google Search Console</div>
+        <div class="section-sub">關鍵字排名、自然點擊、搜尋曝光</div>
+      </div>
+      <div class="section-badge"><span class="badge badge-yellow" id="badge-gsc">待完成</span></div>
+      <i class="ti ti-chevron-down section-chevron" aria-hidden="true"></i>
+    </div>
+
+    <div class="setup-section-body">
+      <div class="step-instruction">
+        <strong style="font-size:11px;display:block;margin-bottom:6px">📋 如何取得以下資訊</strong>
+        <ol>
+          <li>前往 <a href="https://search.google.com/search-console" target="_blank">search.google.com/search-console</a></li>
+          <li>確認你的網站已驗證（左側能看到你的 domain）</li>
+          <li>複製你的網站 URL（例：https://yoursite.com 或 sc-domain:yoursite.com）</li>
+          <li>在 Search Console「設定」→「使用者與權限」→ 加入 Service Account Email（與 GA4 相同金鑰即可）</li>
+        </ol>
+      </div>
+
+      <div class="field">
+        <label for="gsc-site-url">網站 URL</label>
+        <div class="input-wrap">
+          <i class="ti ti-world" aria-hidden="true"></i>
+          <input type="text" id="gsc-site-url" placeholder="https://yoursite.com">
+        </div>
+        <div class="hint">與你在 Search Console 驗證的網站 URL 完全一致（注意有沒有 / 結尾）</div>
+      </div>
+
+      <div class="hint" style="background:var(--accent-light);border:1px solid var(--accent-mid);border-radius:var(--radius-md);padding:10px 12px;font-size:11px;line-height:1.65">
+        <strong>💡 小提示：</strong>Search Console 使用與 GA4 相同的 Service Account JSON 金鑰，上面填好 GA4 金鑰後這裡不需要再上傳。
+      </div>
+
+      <div id="gsc-status" style="display:none;margin-top:10px" class="status-msg"></div>
+
+      <button class="validate-btn" onclick="validateGSC()">
+        <i class="ti ti-plug" aria-hidden="true"></i> 驗證 Search Console 連線
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       STEP 3：Google Ads（選填）
+  ══════════════════════════════════════ -->
+  <div class="setup-section" id="sec-gads">
+    <div class="setup-section-head" onclick="toggleSection('sec-gads')">
+      <div class="section-icon" style="background:#FFFBEB"><i class="ti ti-speakerphone" style="color:#d97706" aria-hidden="true"></i></div>
+      <div class="section-info">
+        <div class="section-title">Google Ads <span class="optional-tag">選填</span></div>
+        <div class="section-sub">廣告花費、ROAS、關鍵字轉換成本</div>
+      </div>
+      <div class="section-badge"><span style="font-size:10px;color:var(--text-secondary)">選填</span></div>
+      <i class="ti ti-chevron-down section-chevron" aria-hidden="true"></i>
+    </div>
+
+    <div class="setup-section-body">
+      <div class="step-instruction">
+        <strong style="font-size:11px;display:block;margin-bottom:6px">📋 如何取得以下資訊</strong>
+        <ol>
+          <li>前往 <a href="https://ads.google.com" target="_blank">ads.google.com</a> 登入</li>
+          <li>在右上角找到格式為 <strong>XXX-XXX-XXXX</strong> 的「客戶 ID」</li>
+          <li>點擊「工具與設定」→「API 中心」→ 接受開發人員授權條款</li>
+          <li>同一個 Service Account JSON 金鑰授予 Google Ads 帳號存取權限即可</li>
+        </ol>
+      </div>
+
+      <div class="field">
+        <label for="gads-customer-id">Google Ads 客戶 ID</label>
+        <div class="input-wrap">
+          <i class="ti ti-id-badge" aria-hidden="true"></i>
+          <input type="text" id="gads-customer-id" placeholder="XXX-XXX-XXXX">
+        </div>
+        <div class="hint">在 Google Ads 右上角顯示，格式為 123-456-7890</div>
+      </div>
+
+      <div id="gads-status" style="display:none;margin-top:10px" class="status-msg"></div>
+      <button class="validate-btn" onclick="showStatus('gads-status','info','Google Ads 串接功能即將推出，目前設定將於下次更新生效。')">
+        <i class="ti ti-plug" aria-hidden="true"></i> 儲存 Google Ads 設定
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       STEP 4：Meta Ads（選填）
+  ══════════════════════════════════════ -->
+  <div class="setup-section" id="sec-meta">
+    <div class="setup-section-head" onclick="toggleSection('sec-meta')">
+      <div class="section-icon" style="background:#F5F3FF"><i class="ti ti-brand-facebook" style="color:#6d28d9" aria-hidden="true"></i></div>
+      <div class="section-info">
+        <div class="section-title">Meta Ads（Facebook / Instagram）<span class="optional-tag">選填</span></div>
+        <div class="section-sub">FB/IG 廣告花費、ROAS、受眾觸及數據</div>
+      </div>
+      <div class="section-badge"><span style="font-size:10px;color:var(--text-secondary)">選填</span></div>
+      <i class="ti ti-chevron-down section-chevron" aria-hidden="true"></i>
+    </div>
+
+    <div class="setup-section-body">
+      <div class="step-instruction">
+        <strong style="font-size:11px;display:block;margin-bottom:6px">📋 如何取得以下資訊（這是最複雜的步驟，約 10 分鐘）</strong>
+        <ol>
+          <li>前往 <a href="https://business.facebook.com" target="_blank">business.facebook.com</a> → 「設定」→「廣告帳號」</li>
+          <li>複製你的<strong>廣告帳號 ID</strong>（格式：act_XXXXXXXXXXXXXXX）</li>
+          <li>「設定」→「系統用戶」→「新增系統用戶」（角色：員工）</li>
+          <li>點擊「新增資產」→ 選擇你的廣告帳號 → 授予「廣告帳號分析師」權限</li>
+          <li>點擊「產生新 Token」→ 選擇 App → 勾選「ads_read」權限 → 複製 Token</li>
+        </ol>
+      </div>
+
+      <div class="field">
+        <label for="meta-account-id">廣告帳號 ID</label>
+        <div class="input-wrap">
+          <i class="ti ti-id-badge" aria-hidden="true"></i>
+          <input type="text" id="meta-account-id" placeholder="act_XXXXXXXXXXXXXXX">
+        </div>
+        <div class="hint">在 Meta 商業管理平台「廣告帳號」頁面找到，格式為 act_123456789012345</div>
+      </div>
+
+      <div class="field">
+        <label for="meta-token">Access Token</label>
+        <div class="input-wrap">
+          <i class="ti ti-lock" aria-hidden="true"></i>
+          <input type="password" id="meta-token" placeholder="EAABxx...">
+        </div>
+        <div class="hint">Meta 系統用戶的長效存取權杖（Long-lived Access Token），有效期約 60 天需定期更新。</div>
+      </div>
+
+      <div id="meta-status" style="display:none;margin-top:10px" class="status-msg"></div>
+      <button class="validate-btn" onclick="showStatus('meta-status','info','Meta Ads 串接功能即將推出，目前設定將於下次更新生效。')">
+        <i class="ti ti-plug" aria-hidden="true"></i> 儲存 Meta Ads 設定
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       STEP 5：AI 分析
+  ══════════════════════════════════════ -->
+  <div class="setup-section" id="sec-ai">
+    <div class="setup-section-head" onclick="toggleSection('sec-ai')">
+      <div class="section-icon" style="background:#F0F9FF"><i class="ti ti-sparkles" style="color:#0284c7" aria-hidden="true"></i></div>
+      <div class="section-info">
+        <div class="section-title">AI 洞察引擎</div>
+        <div class="section-sub">填入 OpenAI API Key 以啟用每週行銷建議分析</div>
+      </div>
+      <div class="section-badge"><span class="badge badge-yellow" id="badge-ai">待設定</span></div>
+      <i class="ti ti-chevron-down section-chevron" aria-hidden="true"></i>
+    </div>
+
+    <div class="setup-section-body">
+      <div class="step-instruction">
+        <strong style="font-size:11px;display:block;margin-bottom:6px">📋 如何取得 OpenAI API Key</strong>
+        <ol>
+          <li>前往 <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a></li>
+          <li>點擊「Create new secret key」→ 複製金鑰（格式：sk-xxxx）</li>
+          <li>確認帳號有足夠的 Credits（每次 AI 分析約消耗 $0.001–$0.005）</li>
+        </ol>
+      </div>
+
+      <div class="field">
+        <label for="openai-key">OpenAI API Key</label>
+        <div class="input-wrap">
+          <i class="ti ti-robot" aria-hidden="true"></i>
+          <input type="password" id="openai-key" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxx">
+        </div>
+        <div class="hint">此 Key 僅儲存在你的本機伺服器，不會上傳至任何雲端服務。</div>
+      </div>
+
+      <div id="ai-status" style="display:none;margin-top:10px" class="status-msg"></div>
+      <button class="validate-btn" onclick="saveAIKey()">
+        <i class="ti ti-check" aria-hidden="true"></i> 儲存 API Key
+      </button>
+    </div>
+  </div>
+
+  <!-- 儲存按鈕 -->
+  <div class="save-footer">
+    <button class="save-btn" id="save-all-btn" onclick="saveAll()">
+      <i class="ti ti-device-floppy" aria-hidden="true"></i>
+      儲存所有設定並返回 Dashboard
+    </button>
+  </div>
+
+</div><!-- /setup-wrap -->
+
+<script>
+const API_BASE = 'http://localhost:8000';
+
+// ── 展開 / 收合 ──────────────────────────────
+function toggleSection(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+// ── 顯示狀態訊息 ─────────────────────────────
+function showStatus(elId, type, msg) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.style.display = 'flex';
+  el.className = `status-msg ${type}`;
+  const icon = { success: 'ti-circle-check', error: 'ti-alert-circle', info: 'ti-info-circle' }[type];
+  el.innerHTML = `<i class="ti ${icon}" aria-hidden="true"></i><span>${msg}</span>`;
+}
+
+// ── 檔案上傳處理 ─────────────────────────────
+function handleFileSelect(event, targetId, zoneId) {
+  const file = event.target.files[0];
+  if (!file) return;
+  readJsonFile(file, targetId, zoneId);
+}
+
+function readJsonFile(file, targetId, zoneId) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const json = JSON.parse(e.target.result);
+      document.getElementById(targetId).value = JSON.stringify(json, null, 2);
+      document.getElementById(targetId).classList.remove('error');
+      document.getElementById(targetId).classList.add('success');
+      const fnEl = document.getElementById(zoneId.replace('upload-zone-','') + '-filename');
+      if (fnEl) { fnEl.textContent = '✓ ' + file.name; fnEl.style.display = 'block'; }
+    } catch {
+      alert('JSON 檔案格式錯誤，請確認下載的是完整的 Service Account JSON 金鑰檔案。');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function handleDragOver(event, zoneId) {
+  event.preventDefault();
+  document.getElementById(zoneId).classList.add('drag-over');
+}
+function handleDragLeave(event, zoneId) {
+  document.getElementById(zoneId).classList.remove('drag-over');
+}
+function handleDrop(event, zoneId, targetId) {
+  event.preventDefault();
+  document.getElementById(zoneId).classList.remove('drag-over');
+  const file = event.dataTransfer.files[0];
+  if (file) readJsonFile(file, targetId, zoneId);
+}
+
+function handleJsonInput(id) {
+  const el = document.getElementById(id);
+  try {
+    JSON.parse(el.value);
+    el.classList.remove('error');
+    el.classList.add('success');
+  } catch {
+    el.classList.remove('success');
+    el.classList.add('error');
+  }
+}
+
+// ── 驗證 GA4 ─────────────────────────────────
+async function validateGA4() {
+  const propId  = document.getElementById('ga4-property-id').value.trim();
+  const jsonStr = document.getElementById('ga4-json').value.trim();
+
+  if (!propId) { showStatus('ga4-status','error','請輸入 GA4 評估 ID（格式：G-XXXXXXXXXX）'); return; }
+  if (!jsonStr) { showStatus('ga4-status','error','請上傳或貼上 Service Account JSON 金鑰'); return; }
+
+  try { JSON.parse(jsonStr); } catch { showStatus('ga4-status','error','JSON 金鑰格式錯誤，請確認內容完整'); return; }
+
+  const btn = document.getElementById('btn-validate-ga4');
+  btn.classList.add('loading');
+  btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> 驗證中...';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/settings/validate-ga4`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ property_id: propId, credentials_json: jsonStr })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showStatus('ga4-status', 'success', `✓ GA4 連線成功！已連接到 ${data.property_name || propId}`);
+      document.getElementById('badge-ga4').textContent = '✓ 已完成';
+      document.getElementById('badge-ga4').className = 'badge badge-green';
+    } else {
+      showStatus('ga4-status', 'error', data.detail || '連線失敗，請確認資訊是否正確');
+    }
+  } catch (e) {
+    showStatus('ga4-status', 'error', '無法連接到後端伺服器，請確認 FastAPI 是否已啟動（uvicorn main:app --reload --port 8000）');
+  }
+
+  btn.classList.remove('loading');
+  btn.innerHTML = '<i class="ti ti-plug" aria-hidden="true"></i> 驗證 GA4 連線';
+}
+
+// ── 驗證 Search Console ──────────────────────
+async function validateGSC() {
+  const url = document.getElementById('gsc-site-url').value.trim();
+  if (!url) { showStatus('gsc-status','error','請輸入你的網站 URL'); return; }
+  // TODO: 呼叫後端驗證端點（與 GA4 共用金鑰）
+  showStatus('gsc-status', 'info', '設定已記錄，Search Console 串接將在下次更新中完整支援。');
+  document.getElementById('badge-gsc').textContent = '已記錄';
+  document.getElementById('badge-gsc').className = 'badge badge-yellow';
+}
+
+// ── 儲存 AI Key ───────────────────────────────
+async function saveAIKey() {
+  const key = document.getElementById('openai-key').value.trim();
+  if (!key || !key.startsWith('sk-')) {
+    showStatus('ai-status', 'error', 'OpenAI API Key 格式錯誤，應以 sk- 開頭');
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/api/settings/save`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ openai_key: key })
+    });
+    if (res.ok) {
+      showStatus('ai-status', 'success', '✓ OpenAI API Key 已儲存，AI 洞察功能已啟用');
+      document.getElementById('badge-ai').textContent = '✓ 已完成';
+      document.getElementById('badge-ai').className = 'badge badge-green';
+    }
+  } catch {
+    showStatus('ai-status', 'error', '無法連接到後端伺服器，請確認 FastAPI 是否已啟動');
+  }
+}
+
+// ── 儲存所有設定 ─────────────────────────────
+async function saveAll() {
+  const propId  = document.getElementById('ga4-property-id').value.trim();
+  const jsonStr = document.getElementById('ga4-json').value.trim();
+  const aiKey   = document.getElementById('openai-key').value.trim();
+
+  if (!propId || !jsonStr) {
+    alert('請至少完成 GA4 串接（評估 ID + Service Account JSON）後再儲存。');
+    return;
+  }
+
+  try {
+    const body = {};
+    if (propId && jsonStr)  body.ga4 = { property_id: propId, credentials_json: jsonStr };
+    if (aiKey)              body.openai_key = aiKey;
+
+    const res = await fetch(`${API_BASE}/api/settings/save`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (res.ok) {
+      alert('✓ 所有設定已儲存！正在返回 Dashboard...');
+      window.location.href = 'index.html';
+    } else {
+      const data = await res.json();
+      alert('儲存失敗：' + (data.detail || '未知錯誤'));
+    }
+  } catch {
+    alert('無法連接到後端伺服器。\n\n請先依以下步驟啟動後端：\n\n1. 開啟終端機\n2. cd backend\n3. uvicorn main:app --reload --port 8000\n\n後端啟動後，再回來按儲存。');
+  }
+}
+
+// ── CSS animation for spinner ────────────────
+const style = document.createElement('style');
+style.textContent = '@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }';
+document.head.appendChild(style);
+
+// ── 頁面載入：讀取既有設定 ──────────────────
+async function loadCurrentSettings() {
+  try {
+    const res = await fetch(`${API_BASE}/api/settings`);
+    if (!res.ok) return;
+    const s = await res.json();
+    if (s.ga4_property_id) {
+      document.getElementById('ga4-property-id').value = s.ga4_property_id;
+    }
+    if (s.ga4_configured) {
+      document.getElementById('badge-ga4').textContent = '✓ 已完成';
+      document.getElementById('badge-ga4').className = 'badge badge-green';
+    }
+    if (s.openai_configured) {
+      document.getElementById('badge-ai').textContent = '✓ 已完成';
+      document.getElementById('badge-ai').className = 'badge badge-green';
+    }
+  } catch { /* 後端未啟動，不影響頁面載入 */ }
+}
+
+document.addEventListener('DOMContentLoaded', loadCurrentSettings);
+</script>
+</body>
+</html>

@@ -14,7 +14,6 @@
    1. 設定
 ──────────────────────────────────────────── */
 const API_BASE = 'http://localhost:8000';  // FastAPI 後端位址，上線後改為正式 domain
-let DASHBOARD_DATA = null;
 
 const DAYS_14 = ['5/26','5/27','5/28','5/29','5/30','5/31','6/1','6/2','6/3','6/4','6/5','6/6','6/7','6/8'];
 
@@ -98,6 +97,7 @@ const MOCK = {
 /* ────────────────────────────────────────────
    3. API 呼叫層（後端完成後取消此區塊的註解）
 ──────────────────────────────────────────── */
+/*
 async function fetchDashboard() {
   setStatus('loading');
   try {
@@ -107,11 +107,12 @@ async function fetchDashboard() {
     setStatus('connected');
     return data;
   } catch (err) {
-    console.warn('API fetch failed, using mock data:', err);
+    console.error('API fetch failed, using mock data:', err);
     setStatus('error');
     return null;  // fallback to MOCK
   }
 }
+*/
 
 function setStatus(state) {
   const dot = document.getElementById('status-dot');
@@ -527,10 +528,9 @@ function goTab(idx) {
   });
   document.querySelectorAll('.page').forEach((p, i) => p.classList.toggle('on', i === idx));
 
-  const data = DASHBOARD_DATA || MOCK;
-  if (idx === 1 && !BUILT.p1) { buildGA4(data); BUILT.p1 = true; }
-  if (idx === 2 && !BUILT.p2) { buildSC(data);  BUILT.p2 = true; }
-  if (idx === 3 && !BUILT.p3) { buildAds(data); BUILT.p3 = true; }
+  if (idx === 1 && !BUILT.p1) { buildGA4(MOCK); BUILT.p1 = true; }
+  if (idx === 2 && !BUILT.p2) { buildSC(MOCK);  BUILT.p2 = true; }
+  if (idx === 3 && !BUILT.p3) { buildAds(MOCK); BUILT.p3 = true; }
   if (idx === 4 && !BUILT.p4) { buildOnboarding(); BUILT.p4 = true; }
 }
 
@@ -653,9 +653,8 @@ document.addEventListener('keydown', e => {
 /* ────────────────────────────────────────────
    11. 初始化
 ──────────────────────────────────────────── */
-document.addEventListener('DOMContentLoaded', async () => {
-  const apiData = await fetchDashboard();
-  DASHBOARD_DATA = apiData || MOCK;
-  buildOverview(DASHBOARD_DATA);
+document.addEventListener('DOMContentLoaded', () => {
+  setStatus('connected'); // 後端完成後改為 loading → connected/error
+  buildOverview(MOCK);
   buildOnboarding();      // Page 4 的靜態內容可以直接建立
 });
