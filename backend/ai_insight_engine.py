@@ -51,3 +51,36 @@ def generate_insight(ga4_data: dict, openai_key: str) -> str:
     )
 
     return response.choices[0].message.content.strip()
+
+
+def generate_chat_reply(user_prompt: str, context_data: dict, openai_key: str) -> str:
+    """
+    輸入使用者發問與數據上下文，調用 OpenAI 回傳繁體中文行銷分析建議
+    """
+    client = OpenAI(api_key=openai_key)
+
+    system_prompt = f"""
+你是一位專業的數位行銷顧問與數據分析專家。你正在為客戶分析網站流量與廣告投放表現。
+請根據以下提供的數據上下文（Context Data），回答使用者的問題。
+
+【當前專案數據上下文】
+{json.dumps(context_data, ensure_ascii=False, indent=2)}
+
+【回答指南】
+1. 請使用繁體中文回答，口吻專業、具體且有建設性。
+2. 盡量從數據中找出問題點與機會，例如高跳出率頁面、低 ROAS 渠道或排名具潛力的關鍵字。
+3. 建議要具體，可提供修改網頁內容、調整廣告受眾或修改 CTA 等方向。
+4. 使用 Markdown 格式美化排版（如列點、粗體）。
+"""
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ],
+        max_tokens=600,
+        temperature=0.7,
+    )
+
+    return response.choices[0].message.content.strip()

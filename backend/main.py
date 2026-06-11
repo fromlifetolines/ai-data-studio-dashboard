@@ -23,7 +23,7 @@ from pydantic import BaseModel
 
 # ── 本地模組 ──────────────────────────────────────────
 from ga4_client import GA4Client, GA4Config
-from ai_insight_engine import generate_insight
+from ai_insight_engine import generate_insight, generate_chat_reply
 from gsc_client import GSCClient
 from gads_client import GoogleAdsClient
 from meta_client import MetaAdsClient
@@ -101,6 +101,9 @@ class CreateProfileRequest(BaseModel):
 
 class SwitchProfileRequest(BaseModel):
     profile_id: str
+
+class AIChatRequest(BaseModel):
+    prompt: str
 
 # ══════════════════════════════════════════════════════
 # 工具函式
@@ -867,6 +870,158 @@ async def get_ai_insight():
 
     # 這裡可以從快取讀取，避免每次都重新呼叫 AI
     return {"insight": "AI 洞察功能已啟用。請呼叫 /api/dashboard 取得完整分析。", "mode": "ready"}
+
+@app.post("/api/ai/chat")
+async def ai_chat(req: AIChatRequest):
+    """
+    接收前端 Prompt，結合當前作用專案數據的 Context，交由 OpenAI 進行分析回答
+    """
+    settings = load_settings()
+    openai_key = settings.get("openai_key") or os.getenv("OPENAI_API_KEY", "")
+
+    # 讀取當前數據上下文
+    cred_path = get_credentials_path()
+
+    context_data = {}
+    if not settings.get("ga4_property_id") or not cred_path:
+        # Demo 模式數據上下文
+        context_data = {
+            "mode": "demo",
+            "project_name": settings.get("name", "預設專案 (公司 A)"),
+            "kpis": {
+                "sessions": "38,241 (較上週 +9.4%)",
+                "users": "28,109 (較上週 +5.2%)",
+                "impressions": "182K (較上週 +12%)",
+                "roas": "3.61×"
+            },
+            "top_pages": [
+                {"path": "/", "views": 12401, "bounce_rate": "38%", "conversions": "4.2%", "status": "良好"},
+                {"path": "/pricing", "views": 7832, "bounce_rate": "78%", "conversions": "1.8%", "status": "待改進"},
+                {"path": "/blog/ga4-guide", "views": 5210, "bounce_rate": "41%", "conversions": "2.9%", "status": "良好"}
+            ],
+            "top_keywords": [
+                {"keyword": "數據分析工具", "impressions": 28400, "clicks": 1477, "rank": "#4.0", "trend": "+2"},
+                {"keyword": "GA4 教學", "impressions": 19200, "clicks": 1306, "rank": "#3.2", "trend": "+3"},
+                {"keyword": "網站流量分析", "impressions": 15800, "clicks": 616, "rank": "#6.1", "trend": "−1"}
+            ],
+            "channels": [
+                {"channel": "Google Ads", "spend": "$68,200", "clicks": "18,400", "conversions": "1,140", "roas": "4.2×"},
+                {"channel": "Meta Ads", "spend": "$42,300", "clicks": "11,200", "conversions": "580", "roas": "2.8×"}
+            ]
+        }
+    else:
+        # 真實模式數據上下文
+        try:
+            config = GA4Config(
+                property_id=settings["ga4_property_id"],
+                credentials_path=str(cred_path)
+            )
+            ga4_client = GA4Client(config)
+            ga4_overview = ga4_client.get_overview("30daysAgo", "today")
+            top_pages = ga4_client.get_top_pages("30daysAgo", "today")
+
+            context_data = {
+                "mode": "live",
+                "project_name": settings.get("name", "未命名專案"),
+                "ga4_overview": ga4_overview,
+                "top_pages": top_pages[:5] if top_pages else []
+            }
+
+            # 加上 GSC / GAds / Meta 設定狀態
+            context_data["gsc_configured"] = bool(settings.get("gsc_site_url"))
+            context_data["gads_configured"] = bool(settings.get("gads_customer_id"))
+            context_data["meta_configured"] = bool(settings.get("meta_account_id"))
+
+        except Exception as e:
+            context_data = {
+                "mode": "live_error",
+                "error": str(e),
+                "message": "已啟用真實數據，但部分 API 呼叫失敗"
+            }
+
+    # 調用 OpenAI 生成回答
+    if not openai_key:
+        demo_answers = {
+            "分析 /pricing 頁面跳出率高的原因並給出具體優化建議": """
+### 📊 /pricing 頁面跳出率分析與優化建議
+
+根據 Demo 數據，**/pricing（價格頁面）** 的瀏覽量為 **7,832 次**，但跳出率高達 **78%**，且轉換率僅有 **1.8%**。這是非常危險的訊號，代表大量有付費意圖的用戶在看到價格後直接離開。
+
+#### 🔍 潛在原因診斷
+1. **價值主張傳遞不足**：用戶進入定價頁後，沒有一眼看明白付費版與免費版的差異。
+2. **缺乏信任背書**：價格頁面沒有常見問題（FAQ）或客戶案例，導致用戶產生疑慮。
+3. **CTA（行動呼籲）不夠明顯**：定價方案的按鈕不突出或流程過於繁瑣。
+
+#### 💡 具體優化建議
+1. **精簡定價卡片**：將方案限制在 3 個以內，並在最推薦的方案上標註「最受歡迎」或「熱門」。
+2. **新增「常見問題 FAQ」區塊**：在定價表下方直接回答「可以退款嗎？」、「如何開立發票？」等用戶結帳前最在意的問題。
+3. **強化 CTA 與價值證明**：在按鈕下方加上「14 天免費試用，無需信用卡」或「隨時可取消」以降低用戶防備心。
+""",
+            "幫我找出本週最值得優先處理的行銷問題，條列說明": """
+### 🎯 本週優先行銷優化項目
+
+目前有兩個核心問題需要優先處理：
+
+1. **價格頁面 (/pricing) 的高跳出率 (78%)**：
+   * **影響**：阻礙了潛在付費客戶的轉換。
+   * **優先級**：🔥 極高（直接影響營收）。
+   * **動作**：簡化定價比較表、增設 14 天免費試用期。
+
+2. **Meta Ads 的 ROAS 下降 (從 3.2 降至 2.8)**：
+   * **影響**：廣告投放效率變差，花費增加但營收成長變緩。
+   * **優先級**：⚡ 高。
+   * **動作**：檢視廣告受眾是否有重疊現象，或更換新的廣告素材，並排除過去 30 天內已轉換的用戶。
+""",
+            "根據這份數據，我的網站下一步應該優化哪些地方？": """
+### 🚀 網站下一步優化指南
+
+根據當前全渠道數據，您的網站下一階段應從以下兩個維度著手：
+
+#### 1. SEO 內容與關鍵字佈局
+* 關鍵字「**數據分析工具**」排名為 **#4.0**（點擊率 5.2%），屬於極佳的導流詞。建議在首頁或核心產品頁面中加強與此關鍵字相關的 H1/H2 標題與內文比重，力求衝入前三名（CTR 將能倍增）。
+* 「**網站流量分析**」排名下跌了 1 名（#6.1），需要新增內容並進行內部連結更新。
+
+#### 2. 付費廣告預算調整
+* **Google Ads** 表現優異（ROAS 4.2x），而 **Meta Ads**（ROAS 2.8x）與 **YouTube Ads**（ROAS 1.9x）表現相對疲軟。
+* 建議在下週將 YouTube Ads 的預算調降 15%-20%，並將該部分預算轉移至 Google Ads 關鍵字廣告以最大化整體 ROAS。
+"""
+        }
+
+        # 針對特定彈窗的分析按鈕提供對應解答
+        for prompt_key, answer in demo_answers.items():
+            if prompt_key in req.prompt:
+                return {"reply": answer, "mode": "demo_mock"}
+
+        # 模糊匹配彈窗分析
+        if "pricing" in req.prompt:
+            return {"reply": demo_answers["分析 /pricing 頁面跳出率高的原因並給出具體優化建議"], "mode": "demo_mock"}
+        elif "關鍵字" in req.prompt or "SEO" in req.prompt:
+            return {"reply": demo_answers["根據這份數據，我的網站下一步應該優化哪些地方？"], "mode": "demo_mock"}
+        elif "廣告" in req.prompt or "ROAS" in req.prompt:
+            return {"reply": demo_answers["幫我找出本週最值得優先處理的行銷問題，條列說明"], "mode": "demo_mock"}
+
+        # 若是自訂問答，回傳提示需要 API key
+        return {
+            "reply": """
+### 💡 啟用 AI 行銷顧問
+
+目前尚未設定 OpenAI API Key，無法進行即時的自訂問答。
+
+**請依以下步驟啟用完整功能：**
+1. 前往右上角「**設定**」頁面。
+2. 在 **STEP 5：AI 洞察與智慧建議** 欄位中貼上您的 `OpenAI API Key` (sk-...)。
+3. 儲存設定後，AI 行銷顧問即可根據您的**真實網站數據**，提供量身打造的行銷洞察！
+""",
+            "mode": "no_key"
+        }
+
+    try:
+        reply = await asyncio.to_thread(
+            generate_chat_reply, req.prompt, context_data, openai_key
+        )
+        return {"reply": reply, "mode": "live"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI 分析失敗：{str(e)}")
 
 # ══════════════════════════════════════════════════════
 # Demo 數據（沒有 credentials 時使用）

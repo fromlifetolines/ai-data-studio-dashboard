@@ -647,6 +647,29 @@
     </div>
   </div>
 
+  <!-- Modal：AI 行銷顧問對話 -->
+  <div class="modal-bg" id="modal-ai-chat" onclick="closeOnBg(event,'modal-ai-chat')" role="dialog" aria-modal="true" aria-labelledby="maic-title">
+    <div class="modal modal-wide">
+      <div class="modal-head">
+        <h2 class="modal-title" id="maic-title"><i class="ti ti-sparkles" style="color:var(--accent);margin-right:4px" aria-hidden="true"></i>AI 行銷顧問</h2>
+        <button class="modal-close" onclick="closeModal('modal-ai-chat')" aria-label="關閉">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="chat-container">
+          <div class="chat-messages" id="chat-messages-list">
+            <!-- 訊息將動態插入此處 -->
+          </div>
+          <div class="chat-input-row">
+            <input type="text" id="chat-user-input" class="chat-input" placeholder="詢問關於此數據的優化建議..." autocomplete="off">
+            <button class="chat-send-btn" id="btn-send-chat">
+              <i class="ti ti-send" aria-hidden="true"></i> 送出
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- 主邏輯 -->

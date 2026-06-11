@@ -935,6 +935,141 @@ async function deleteProfile(profileId) {
   }
 }
 
+// ── AI 行銷顧問對話功能 ────────────────────────
+async function sendPrompt(promptText) {
+  if (!promptText) return;
+
+  // 1. 打開 Modal
+  openModal('modal-ai-chat');
+
+  const messagesList = document.getElementById('chat-messages-list');
+  const sendBtn = document.getElementById('btn-send-chat');
+  const inputField = document.getElementById('chat-user-input');
+
+  if (!messagesList) return;
+
+  // 2. 添加使用者的發問訊息到 UI
+  const userMsgEl = document.createElement('div');
+  userMsgEl.className = 'chat-msg user';
+  userMsgEl.textContent = promptText;
+  messagesList.appendChild(userMsgEl);
+
+  // 3. 滾動到底部
+  messagesList.scrollTop = messagesList.scrollHeight;
+
+  // 4. 顯示 AI 正在輸入的動畫 (Typing Indicator)
+  const typingEl = document.createElement('div');
+  typingEl.className = 'chat-msg assistant';
+  typingEl.id = 'chat-typing-indicator';
+  typingEl.innerHTML = `
+    <div class="typing-indicator">
+      <span></span><span></span><span></span>
+    </div>
+  `;
+  messagesList.appendChild(typingEl);
+  messagesList.scrollTop = messagesList.scrollHeight;
+
+  // 禁用輸入與發送按鈕
+  if (sendBtn) sendBtn.disabled = true;
+  if (inputField) {
+    inputField.disabled = true;
+    inputField.value = '';
+  }
+
+  // 5. 打後端 API 取得 AI 回覆
+  try {
+    const res = await fetch(`${API_BASE}/api/ai/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: promptText })
+    });
+    
+    // 移除輸入動畫
+    const indicator = document.getElementById('chat-typing-indicator');
+    if (indicator) indicator.remove();
+
+    if (!res.ok) throw new Error('API error');
+    
+    const data = await res.json();
+    const reply = data.reply;
+
+    // 6. 添加 AI 的回覆到 UI
+    const assistantMsgEl = document.createElement('div');
+    assistantMsgEl.className = 'chat-msg assistant';
+    
+    // 支援 Markdown 粗體、段落、列表的極簡解析
+    assistantMsgEl.innerHTML = parseMiniMarkdown(reply);
+    messagesList.appendChild(assistantMsgEl);
+  } catch (err) {
+    console.error('AI Chat failed:', err);
+    const indicator = document.getElementById('chat-typing-indicator');
+    if (indicator) indicator.remove();
+
+    const errMsgEl = document.createElement('div');
+    errMsgEl.className = 'chat-msg assistant';
+    errMsgEl.style.borderColor = 'var(--danger)';
+    errMsgEl.innerHTML = '<strong>❌ 錯誤：</strong>無法連接到後端 AI 伺服器，請確認 FastAPI 是否已正常啟動。';
+    messagesList.appendChild(errMsgEl);
+  } finally {
+    // 恢復輸入與發送按鈕
+    if (sendBtn) sendBtn.disabled = false;
+    if (inputField) {
+      inputField.disabled = false;
+      inputField.focus();
+    }
+    messagesList.scrollTop = messagesList.scrollHeight;
+  }
+}
+
+// 極簡 Markdown 解析器
+function parseMiniMarkdown(md) {
+  if (!md) return '';
+  let html = md;
+  // 標題 3
+  html = html.replace(/^### (.*$)/gim, '<h3 style="font-size:13px;font-weight:600;margin-top:12px;margin-bottom:6px;color:var(--text-primary)">$1</h3>');
+  // 標題 4
+  html = html.replace(/^#### (.*$)/gim, '<h4 style="font-size:11px;font-weight:600;margin-top:10px;margin-bottom:4px;color:var(--text-primary)">$1</h4>');
+  // 粗體
+  html = html.replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>');
+  // 斜體
+  html = html.replace(/\*(.*?)\*/gim, '<em>$1</em>');
+  // 清單
+  html = html.replace(/^\* (.*$)/gim, '<li style="margin-left: 14px; list-style-type: disc;">$1</li>');
+  html = html.replace(/^- (.*$)/gim, '<li style="margin-left: 14px; list-style-type: disc;">$1</li>');
+  // 數字清單
+  html = html.replace(/^\d+\. (.*$)/gim, '<li style="margin-left: 14px; list-style-type: decimal;">$1</li>');
+  // 段落換行
+  html = html.split('\n\n').map(p => {
+    if (p.trim().startsWith('<li') || p.trim().startsWith('<h3') || p.trim().startsWith('<h4')) {
+      return p;
+    }
+    return '<p style="margin-bottom:8px;line-height:1.65">' + p.replace(/\n/g, '<br>') + '</p>';
+  }).join('');
+  return html;
+}
+
+// 綁定 AI 對話輸入框與按鈕
+function initAIChatUI() {
+  const inputField = document.getElementById('chat-user-input');
+  const sendBtn = document.getElementById('btn-send-chat');
+
+  if (sendBtn && inputField) {
+    // 點擊按鈕送出
+    sendBtn.addEventListener('click', () => {
+      const text = inputField.value.trim();
+      if (text) sendPrompt(text);
+    });
+
+    // 按 Enter 送出
+    inputField.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const text = inputField.value.trim();
+        if (text) sendPrompt(text);
+      }
+    });
+  }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   // 讀取先前儲存的天數
   const savedRange = localStorage.getItem('dashboard_date_range') || '30';
@@ -981,4 +1116,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 初始載入數據
   await updateDashboard(savedRange);
   buildOnboarding();      // Page 4 的靜態內容可以直接建立
+  initAIChatUI();         // 初始化 AI 對話綁定
 });
