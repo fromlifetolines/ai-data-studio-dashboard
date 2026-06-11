@@ -96,27 +96,119 @@ class MetaValidateRequest(BaseModel):
     account_id: str
     token: str
 
+class CreateProfileRequest(BaseModel):
+    name: str
+
+class SwitchProfileRequest(BaseModel):
+    profile_id: str
+
 # ══════════════════════════════════════════════════════
 # 工具函式
 # ══════════════════════════════════════════════════════
 
-def load_settings() -> dict:
-    """讀取本地設定檔"""
+def load_all_settings() -> dict:
+    """讀取本地完整設定檔（包含所有 profiles）"""
     if SETTINGS_PATH.exists():
-        with open(SETTINGS_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {}
+        try:
+            with open(SETTINGS_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            # 自動升級舊版單一設定檔
+            if not isinstance(data, dict) or "profiles" not in data:
+                return _upgrade_old_settings(data)
+            return data
+        except Exception as e:
+            print(f"[ERROR] 讀取設定檔失敗，將重置為初始狀態：{e}")
+            
+    return {
+        "active_profile_id": "default",
+        "profiles": {
+            "default": {
+                "id": "default",
+                "name": "預設專案 (公司 A)"
+            }
+        }
+    }
 
-def save_settings(data: dict):
-    """儲存設定到本地檔案"""
+def _upgrade_old_settings(old_data: dict) -> dict:
+    """將舊版單一專案設定檔自動升級為多專案結構"""
+    print("[INFO] 檢測到舊版設定檔，正在自動升級為多專案架構...")
+    default_profile = {
+        "id": "default",
+        "name": "預設專案 (公司 A)"
+    }
+    if isinstance(old_data, dict):
+        for k, v in old_data.items():
+            if k not in ["active_profile_id", "profiles"]:
+                default_profile[k] = v
+                
+    new_data = {
+        "active_profile_id": "default",
+        "profiles": {
+            "default": default_profile
+        }
+    }
+    save_all_settings(new_data)
+    
+    # 複製舊金鑰
+    old_cred = CREDENTIALS_DIR / "service-account.json"
+    new_cred = CREDENTIALS_DIR / "service-account-default.json"
+    if old_cred.exists() and not new_cred.exists():
+        try:
+            import shutil
+            shutil.copy(old_cred, new_cred)
+            print("[INFO] 已成功複製舊金鑰為 service-account-default.json")
+        except Exception as e:
+            print(f"[WARN] 複製舊金鑰失敗：{e}")
+            
+    return new_data
+
+def save_all_settings(data: dict):
+    """儲存本地完整設定檔"""
     SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(SETTINGS_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-def get_credentials_path() -> Optional[Path]:
-    """取得 Service Account JSON 檔案路徑"""
-    path = CREDENTIALS_DIR / "service-account.json"
-    return path if path.exists() else None
+def get_active_profile_id() -> str:
+    """取得目前啟動的專案 ID"""
+    config = load_all_settings()
+    return config.get("active_profile_id", "default")
+
+def get_active_settings() -> dict:
+    """取得目前啟用專案的設定內容"""
+    config = load_all_settings()
+    act_id = config.get("active_profile_id", "default")
+    # 確保 active_profile_id 存在於 profiles
+    if act_id not in config.setdefault("profiles", {}):
+        config["profiles"][act_id] = {"id": act_id, "name": "未命名專案"}
+        save_all_settings(config)
+    return config["profiles"][act_id]
+
+def load_settings() -> dict:
+    """相容舊端點：讀取當前啟用專案的設定"""
+    return get_active_settings()
+
+def save_settings(data: dict):
+    """相容舊端點：儲存設定到目前啟用專案"""
+    config = load_all_settings()
+    act_id = config.get("active_profile_id", "default")
+    config.setdefault("profiles", {})[act_id] = data
+    save_all_settings(config)
+
+def get_credentials_path(profile_id: Optional[str] = None) -> Optional[Path]:
+    """取得特定專案或當前啟用專案的 Service Account JSON 檔案路徑"""
+    if profile_id is None:
+        profile_id = get_active_profile_id()
+    path = CREDENTIALS_DIR / f"service-account-{profile_id}.json"
+    if path.exists():
+        return path
+    
+    # 向後相容回退
+    if profile_id == "default":
+        old_path = CREDENTIALS_DIR / "service-account.json"
+        if old_path.exists():
+            return old_path
+            
+    return None
 
 # ══════════════════════════════════════════════════════
 # API 路由
@@ -144,6 +236,98 @@ async def health_check():
         }
     }
 
+# ── 專案/多公司管理 ────────────────────────────────────
+@app.get("/api/profiles")
+async def get_profiles():
+    """獲取專案/公司列表，以及當前啟用的專案 ID"""
+    config = load_all_settings()
+    profiles_dict = config.get("profiles", {})
+    
+    list_profiles = []
+    for pid, p in profiles_dict.items():
+        cred_path = get_credentials_path(pid)
+        list_profiles.append({
+            "id": pid,
+            "name": p.get("name", "未命名專案"),
+            "ga4_configured": bool(p.get("ga4_property_id")) and cred_path is not None,
+            "gsc_configured": bool(p.get("gsc_site_url")) and cred_path is not None,
+            "gads_configured": bool(p.get("gads_customer_id")),
+            "meta_configured": bool(p.get("meta_account_id"))
+        })
+        
+    return {
+        "active_profile_id": config.get("active_profile_id", "default"),
+        "profiles": list_profiles
+    }
+
+@app.post("/api/profiles/create")
+async def create_profile(req: CreateProfileRequest):
+    """建立新專案，並自動切換為作用專案"""
+    import uuid
+    config = load_all_settings()
+    
+    profile_id = f"profile_{str(uuid.uuid4())[:8]}"
+    
+    new_profile = {
+        "id": profile_id,
+        "name": req.name.strip(),
+        "ga4_property_id": "",
+        "gsc_site_url": "",
+        "gads_customer_id": "",
+        "gads_developer_token": "",
+        "gads_client_id": "",
+        "gads_client_secret": "",
+        "gads_refresh_token": "",
+        "meta_account_id": "",
+        "meta_token": "",
+        "openai_key": ""
+    }
+    
+    config.setdefault("profiles", {})[profile_id] = new_profile
+    config["active_profile_id"] = profile_id
+    save_all_settings(config)
+    
+    return {"success": True, "profile_id": profile_id, "name": req.name}
+
+@app.post("/api/profiles/switch")
+async def switch_profile(req: SwitchProfileRequest):
+    """切換當前作用的專案"""
+    config = load_all_settings()
+    if req.profile_id not in config.get("profiles", {}):
+        raise HTTPException(status_code=404, detail="找不到指定的專案。")
+        
+    config["active_profile_id"] = req.profile_id
+    save_all_settings(config)
+    return {"success": True, "active_profile_id": req.profile_id}
+
+@app.delete("/api/profiles/{profile_id}")
+async def delete_profile(profile_id: str):
+    """刪除專案，如果刪除的是 active，會自動退回 default"""
+    config = load_all_settings()
+    if profile_id not in config.get("profiles", {}):
+        raise HTTPException(status_code=404, detail="找不到指定的專案。")
+        
+    if profile_id == "default":
+        raise HTTPException(status_code=400, detail="無法刪除預設專案。")
+        
+    # 刪除設定
+    del config["profiles"][profile_id]
+    
+    # 刪除金鑰檔案
+    cred_path = CREDENTIALS_DIR / f"service-account-{profile_id}.json"
+    if cred_path.exists():
+        try:
+            cred_path.unlink()
+        except Exception as e:
+            print(f"[WARN] 刪除金鑰檔案失敗：{e}")
+            
+    # 若刪除的是當前專案，切換回 default
+    if config.get("active_profile_id") == profile_id:
+        config["active_profile_id"] = "default"
+        
+    save_all_settings(config)
+    return {"success": True, "message": "專案已刪除"}
+
 # ── 儲存設定 ──────────────────────────────────────────
 @app.post("/api/settings/save")
 async def save_api_settings(req: SaveSettingsRequest):
@@ -161,7 +345,8 @@ async def save_api_settings(req: SaveSettingsRequest):
         settings["ga4_property_id"] = prop_id
 
         # 儲存 Service Account JSON 到 credentials/ 目錄
-        cred_path = CREDENTIALS_DIR / "service-account.json"
+        active_id = get_active_profile_id()
+        cred_path = CREDENTIALS_DIR / f"service-account-{active_id}.json"
         try:
             parsed = json.loads(req.ga4.credentials_json)
             with open(cred_path, "w", encoding="utf-8") as f:
@@ -197,7 +382,8 @@ async def validate_ga4(req: ValidateRequest):
     """
     try:
         # 暫時寫入 credentials 測試
-        temp_path = CREDENTIALS_DIR / "service-account.json"
+        active_id = get_active_profile_id()
+        temp_path = CREDENTIALS_DIR / f"service-account-{active_id}.json"
         parsed = json.loads(req.credentials_json)
         with open(temp_path, "w") as f:
             json.dump(parsed, f)
@@ -611,8 +797,10 @@ async def get_dashboard(
                 print(f"[WARN] AI 洞察生成失敗：{e}")
                 ai_summary = "AI 分析暫時無法使用，請稍後再試。"
 
+        labels = ga4_sessions_trend.get("labels", []) if (ga4_sessions_trend and isinstance(ga4_sessions_trend, dict)) else demo.get("labels", [])
         data_payload = {
             "ai_summary": ai_summary or f"已成功串接真實數據！工作階段共 {ga4_overview.get('sessions', 0):,} 次，自然點擊 {sum(ssc_click):,} 次，廣告總花費 ${total_spend:,.0f}，全渠道 ROAS {roas_val}。",
+            "labels": labels,
             "kpis": kpis,
             "sessions_trend": s_trend,
             "users_trend": u_trend,
@@ -688,6 +876,7 @@ def _get_demo_data() -> dict:
     """回傳 Demo 模式假數據，與前端 MOCK 對應"""
     return {
         "ai_summary": "這是 <strong>Demo 模式</strong>，目前顯示的是示範數據。請前往「設定」頁面串接你的 GA4 帳號，即可看到真實數據與 AI 分析。",
+        "labels": ["5/26","5/27","5/28","5/29","5/30","5/31","6/1","6/2","6/3","6/4","6/5","6/6","6/7","6/8"],
         "kpis": {
             "sessions":    {"value": "38,241", "delta": "+9.4%", "trend": "up"},
             "users":       {"value": "28,109", "delta": "+5.2%", "trend": "up"},

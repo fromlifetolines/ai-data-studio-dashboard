@@ -98,11 +98,14 @@ const MOCK = {
    3. API 呼叫層
    ──────────────────────────────────────────── */
 let currentData = MOCK;
+const CHARTS = {};
 
-async function fetchDashboard() {
+async function fetchDashboard(rangeDays = 30) {
   setStatus('loading');
   try {
-    const res = await fetch(`${API_BASE}/api/dashboard`);
+    const startDate = `${rangeDays}daysAgo`;
+    const endDate = 'today';
+    const res = await fetch(`${API_BASE}/api/dashboard?start_date=${startDate}&end_date=${endDate}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const result = await res.json();
     setStatus('connected');
@@ -119,6 +122,70 @@ function setStatus(state) {
   if (!dot) return;
   dot.className = 'status-dot ' + state;
   dot.title = { loading:'數據載入中...', connected:'數據已連線', error:'連線失敗，顯示示範數據' }[state] || '';
+}
+
+function getMockDataForRange(days) {
+  const data = JSON.parse(JSON.stringify(MOCK));
+  const count = parseInt(days, 10) || 30;
+  
+  const generateTrend = (baseVal, volatility, count) => {
+    let current = baseVal;
+    const trend = [];
+    for (let i = 0; i < count; i++) {
+      current += Math.round((Math.random() - 0.45) * volatility);
+      trend.push(Math.max(Math.round(current), 100));
+    }
+    return trend;
+  };
+  
+  data.sessions_trend = generateTrend(2500, 300, count);
+  data.users_trend = data.sessions_trend.map(v => Math.round(v * 0.75));
+  data.new_users_trend = data.users_trend.map(v => Math.round(v * 0.6));
+  
+  data.ssc_imp = generateTrend(12000, 1500, count);
+  data.ssc_click = data.ssc_imp.map(v => Math.round(v * (0.03 + Math.random() * 0.01)));
+  
+  data.ad_spend = generateTrend(80, 10, count).map(v => Math.round(v / 10 + 5));
+  data.ad_revenue = data.ad_spend.map(v => Math.round(v * (3.0 + Math.random() * 0.8)));
+  
+  data.labels = [];
+  const today = new Date();
+  for (let i = count - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    data.labels.push(`${d.getMonth() + 1}/${d.getDate()}`);
+  }
+  
+  const totalSessions = data.sessions_trend.reduce((a, b) => a + b, 0);
+  const totalUsers = data.users_trend.reduce((a, b) => a + b, 0);
+  const totalImp = data.ssc_imp.reduce((a, b) => a + b, 0);
+  const totalSpend = data.ad_spend.reduce((a, b) => a + b, 0) * 1000;
+  const totalRev = data.ad_revenue.reduce((a, b) => a + b, 0) * 1000;
+  
+  data.kpis.sessions.value = totalSessions.toLocaleString();
+  data.kpis.users.value = totalUsers.toLocaleString();
+  data.kpis.impressions.value = totalImp >= 1000000 ? `${(totalImp/1000000).toFixed(1)}M` : `${Math.round(totalImp/1000)}K`;
+  data.kpis.roas.value = `${(totalRev / totalSpend).toFixed(2)}×`;
+  
+  return data;
+}
+
+async function updateDashboard(rangeDays) {
+  setStatus('loading');
+  const apiResult = await fetchDashboard(rangeDays);
+  if (apiResult && apiResult.data) {
+    currentData = apiResult.data;
+  } else {
+    currentData = getMockDataForRange(rangeDays);
+  }
+  
+  Object.keys(BUILT).forEach(k => BUILT[k] = false);
+  buildOverview(currentData);
+  
+  const activeTabIdx = Array.from(document.querySelectorAll('.tab')).findIndex(t => t.classList.contains('on'));
+  if (activeTabIdx !== -1) {
+    goTab(activeTabIdx);
+  }
 }
 
 /* ────────────────────────────────────────────
@@ -147,23 +214,44 @@ const Y_GRID_ON  = { grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false }, tic
 function makeLine(id, datasets, yCallback) {
   const canvas = document.getElementById(id);
   if (!canvas) return null;
-  return new Chart(canvas, {
+  
+  if (CHARTS[id]) {
+    CHARTS[id].destroy();
+  }
+  
+  const labels = currentData.labels || DAYS_14;
+  
+  CHARTS[id] = new Chart(canvas, {
     type: 'line',
-    data: { labels: DAYS_14, datasets },
+    data: { labels: labels, datasets },
     options: {
       ...CHART_OPTIONS_BASE,
       scales: {
-        x: { ...X_GRID_OFF, ticks: { ...X_GRID_OFF.ticks, autoSkip: false, callback: (v, i) => i % 2 === 0 ? DAYS_14[i] : '' } },
+        x: { 
+          ...X_GRID_OFF, 
+          ticks: { 
+            ...X_GRID_OFF.ticks, 
+            autoSkip: true, 
+            maxTicksLimit: 10,
+            font: { size: 9 }
+          } 
+        },
         y: { ...Y_GRID_ON,  ticks: { ...Y_GRID_ON.ticks, callback: yCallback || (v => v >= 1000 ? (v/1000).toFixed(0) + 'K' : v) } },
       },
     },
   });
+  return CHARTS[id];
 }
 
 function makeDonut(id, items) {
   const canvas = document.getElementById(id);
   if (!canvas) return null;
-  return new Chart(canvas, {
+  
+  if (CHARTS[id]) {
+    CHARTS[id].destroy();
+  }
+  
+  CHARTS[id] = new Chart(canvas, {
     type: 'doughnut',
     data: {
       labels: items.map(d => d.label),
@@ -179,6 +267,7 @@ function makeDonut(id, items) {
       },
     },
   });
+  return CHARTS[id];
 }
 
 /* ────────────────────────────────────────────
@@ -298,10 +387,14 @@ function buildSC(data) {
   // 雙軸折線
   const canvas = document.getElementById('c-ssc');
   if (canvas) {
-    new Chart(canvas, {
+    if (CHARTS['c-ssc']) {
+      CHARTS['c-ssc'].destroy();
+    }
+    const labels = data.labels || DAYS_14;
+    CHARTS['c-ssc'] = new Chart(canvas, {
       type: 'line',
       data: {
-        labels: DAYS_14,
+        labels: labels,
         datasets: [
           { data: data.ssc_imp,   borderColor: '#2563EB', borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true, backgroundColor: 'rgba(37,99,235,0.04)', yAxisID: 'y' },
           { data: data.ssc_click, borderColor: '#16a34a', borderWidth: 2, pointRadius: 0, tension: 0.4, borderDash: [3,2], yAxisID: 'y2' },
@@ -310,7 +403,15 @@ function buildSC(data) {
       options: {
         ...CHART_OPTIONS_BASE,
         scales: {
-          x:  { ...X_GRID_OFF, ticks: { ...X_GRID_OFF.ticks, autoSkip: false, callback: (v,i) => i%2===0 ? DAYS_14[i] : '' } },
+          x:  { 
+            ...X_GRID_OFF, 
+            ticks: { 
+              ...X_GRID_OFF.ticks, 
+              autoSkip: true, 
+              maxTicksLimit: 10,
+              font: { size: 9 } 
+            } 
+          },
           y:  { ...Y_GRID_ON,  position: 'left',  ticks: { ...Y_GRID_ON.ticks, callback: v => v>=1000 ? (v/1000).toFixed(0)+'K' : v } },
           y2: { grid: { display: false }, position: 'right', ticks: { font: { size: 10 }, color: '#9ca3af' } },
         },
@@ -651,16 +752,233 @@ document.addEventListener('keydown', e => {
 });
 
 /* ────────────────────────────────────────────
-   11. 初始化
+   11. 多公司/專案管理與初始化
 ──────────────────────────────────────────── */
-document.addEventListener('DOMContentLoaded', async () => {
-  setStatus('loading');
-  const apiResult = await fetchDashboard();
-  if (apiResult && apiResult.data) {
-    currentData = apiResult.data;
-  } else {
-    currentData = MOCK;
+
+async function initProfiles() {
+  const selectorBtn = document.getElementById('project-selector-btn');
+  const dropdown = document.getElementById('project-dropdown');
+  const listContainer = document.getElementById('project-list-items');
+  const activeNameEl = document.getElementById('active-project-name');
+  const activeTitleNameEl = document.getElementById('active-project-title-name');
+  const addBtn = document.getElementById('btn-add-project-trigger');
+  
+  if (!selectorBtn || !dropdown || !listContainer) return;
+  
+  // 點擊按鈕切換下拉選單顯示/隱藏
+  selectorBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle('show');
+    selectorBtn.classList.toggle('open');
+  });
+  
+  // 點擊外面關閉選單
+  document.addEventListener('click', () => {
+    dropdown.classList.remove('show');
+    selectorBtn.classList.remove('open');
+  });
+  
+  // 點擊「新增專案」
+  if (addBtn) {
+    addBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropdown.classList.remove('show');
+      selectorBtn.classList.remove('open');
+      openModal('modal-create-project');
+    });
   }
-  buildOverview(currentData);
+  
+  // 新增專案彈窗的送出按鈕
+  const submitBtn = document.getElementById('btn-submit-create-project');
+  if (submitBtn) {
+    submitBtn.addEventListener('click', async () => {
+      const nameInput = document.getElementById('new-project-name');
+      const name = nameInput.value.trim();
+      if (!name) { alert('請輸入公司/專案名稱'); return; }
+      
+      try {
+        const res = await fetch(`${API_BASE}/api/profiles/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
+        });
+        if (res.ok) {
+          nameInput.value = '';
+          closeModal('modal-create-project');
+          // 重新載入與更新專案
+          await loadProfiles();
+          // 如果在設定頁面，切換專案時要重新載入設定
+          if (typeof loadCurrentSettings === 'function') {
+            await loadCurrentSettings();
+          } else {
+            // 在首頁的話更新數據
+            const savedRange = localStorage.getItem('dashboard_date_range') || '30';
+            await updateDashboard(savedRange);
+          }
+        } else {
+          alert('建立專案失敗');
+        }
+      } catch (e) {
+        console.error('Create profile failed:', e);
+        alert('無法連接到後端伺服器');
+      }
+    });
+  }
+  
+  // 載入專案清單
+  await loadProfiles();
+}
+
+async function loadProfiles() {
+  const listContainer = document.getElementById('project-list-items');
+  const activeNameEl = document.getElementById('active-project-name');
+  const activeTitleNameEl = document.getElementById('active-project-title-name');
+  if (!listContainer) return;
+  
+  try {
+    const res = await fetch(`${API_BASE}/api/profiles`);
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    
+    const activeId = data.active_profile_id;
+    const profiles = data.profiles;
+    
+    // 找出當前 active 的專案名稱
+    const activeProfile = profiles.find(p => p.id === activeId);
+    const activeName = activeProfile ? activeProfile.name : '預設專案 (公司 A)';
+    if (activeNameEl) activeNameEl.textContent = activeName;
+    if (activeTitleNameEl) activeTitleNameEl.textContent = activeName;
+    
+    // 渲染下拉選單列表
+    listContainer.innerHTML = profiles.map(p => `
+      <div class="project-item ${p.id === activeId ? 'active' : ''}" data-id="${p.id}">
+        <span class="project-item-name">${p.name}</span>
+        ${p.id !== 'default' ? `<span class="project-item-delete" data-id="${p.id}" title="刪除專案">×</span>` : ''}
+      </div>
+    `).join('');
+    
+    // 綁定項目點擊事件（切換專案）
+    document.querySelectorAll('.project-item').forEach(item => {
+      item.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const profileId = item.getAttribute('data-id');
+        if (e.target.classList.contains('project-item-delete')) return;
+        
+        await switchProfile(profileId);
+      });
+    });
+    
+    // 綁定刪除專案點擊事件
+    document.querySelectorAll('.project-item-delete').forEach(delBtn => {
+      delBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const profileId = delBtn.getAttribute('data-id');
+        const p = profiles.find(x => x.id === profileId);
+        if (!p) return;
+        
+        if (confirm(`確定要刪除「${p.name}」專案嗎？\n這會將此專案的所有串接設定與金鑰檔案一併刪除且無法復原。`)) {
+          await deleteProfile(profileId);
+        }
+      });
+    });
+    
+  } catch (err) {
+    console.error('Failed to load profiles:', err);
+    if (activeNameEl) activeNameEl.textContent = '預設專案 (公司 A)';
+    if (activeTitleNameEl) activeTitleNameEl.textContent = '預設專案 (公司 A)';
+  }
+}
+
+async function switchProfile(profileId) {
+  try {
+    const res = await fetch(`${API_BASE}/api/profiles/switch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profile_id: profileId })
+    });
+    if (res.ok) {
+      document.getElementById('project-dropdown').classList.remove('show');
+      document.getElementById('project-selector-btn').classList.remove('open');
+      
+      await loadProfiles();
+      
+      if (typeof loadCurrentSettings === 'function') {
+        await loadCurrentSettings();
+      } else {
+        const savedRange = localStorage.getItem('dashboard_date_range') || '30';
+        await updateDashboard(savedRange);
+      }
+    }
+  } catch (e) {
+    console.error('Switch profile failed:', e);
+    alert('切換專案失敗');
+  }
+}
+
+async function deleteProfile(profileId) {
+  try {
+    const res = await fetch(`${API_BASE}/api/profiles/${profileId}`, {
+      method: 'DELETE'
+    });
+    if (res.ok) {
+      await loadProfiles();
+      if (typeof loadCurrentSettings === 'function') {
+        await loadCurrentSettings();
+      } else {
+        const savedRange = localStorage.getItem('dashboard_date_range') || '30';
+        await updateDashboard(savedRange);
+      }
+    }
+  } catch (e) {
+    console.error('Delete profile failed:', e);
+    alert('刪除專案失敗');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // 讀取先前儲存的天數
+  const savedRange = localStorage.getItem('dashboard_date_range') || '30';
+  
+  // 更新 UI 上的選取狀態
+  const dateLabel = document.getElementById('date-label');
+  if (dateLabel) {
+    dateLabel.textContent = `最近 ${savedRange} 天`;
+  }
+  document.querySelectorAll('.date-option').forEach(opt => {
+    opt.classList.toggle('active', opt.getAttribute('data-range') === savedRange);
+  });
+
+  // 設定日期下拉選單點擊事件
+  const datePickerBtn = document.getElementById('date-picker-btn');
+  const dateDropdown = document.getElementById('date-dropdown');
+  if (datePickerBtn && dateDropdown) {
+    datePickerBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dateDropdown.classList.toggle('show');
+    });
+    document.addEventListener('click', () => {
+      dateDropdown.classList.remove('show');
+    });
+    document.querySelectorAll('.date-option').forEach(opt => {
+      opt.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const range = opt.getAttribute('data-range');
+        localStorage.setItem('dashboard_date_range', range);
+        document.querySelectorAll('.date-option').forEach(o => o.classList.remove('active'));
+        opt.classList.add('active');
+        if (dateLabel) {
+          dateLabel.textContent = `最近 ${range} 天`;
+        }
+        dateDropdown.classList.remove('show');
+        await updateDashboard(range);
+      });
+    });
+  }
+
+  // 初始載入專案管理
+  await initProfiles();
+
+  // 初始載入數據
+  await updateDashboard(savedRange);
   buildOnboarding();      // Page 4 的靜態內容可以直接建立
 });

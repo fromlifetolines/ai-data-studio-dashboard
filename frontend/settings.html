@@ -163,9 +163,28 @@
 
 <div class="setup-wrap">
 
-  <a href="index.html" class="back-link">
-    <i class="ti ti-arrow-left" aria-hidden="true"></i> 返回 Dashboard
-  </a>
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <a href="index.html" class="back-link" style="margin-bottom: 0;">
+      <i class="ti ti-arrow-left" aria-hidden="true"></i> 返回 Dashboard
+    </a>
+    
+    <!-- 專案切換器 -->
+    <div class="project-selector" id="project-selector-btn" role="button" aria-haspopup="listbox" aria-expanded="false" style="margin-right: 0; padding: 4px 8px; font-size: 11px; border: 1px solid var(--border-mid);">
+      <div class="brand-dot" style="width: 6px; height: 6px;"></div>
+      <span id="active-project-name">載入中...</span>
+      <i class="ti ti-chevron-down" aria-hidden="true"></i>
+      
+      <div class="project-dropdown" id="project-dropdown">
+        <div class="project-list" id="project-list-items" role="listbox">
+          <!-- JS 動態載入專案清單 -->
+        </div>
+        <div class="dropdown-divider"></div>
+        <div class="project-action" id="btn-add-project-trigger">
+          <i class="ti ti-plus" aria-hidden="true"></i> 新增專案/公司...
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Hero -->
   <div class="setup-hero">
@@ -174,7 +193,7 @@
         <span style="color:#fff;font-size:15px;font-weight:500">AI</span>
       </div>
     </div>
-    <h1>串接你的數據源</h1>
+    <h1>串接 <span id="active-project-title-name" style="color:var(--accent)">預設專案</span> 的數據源</h1>
     <p>完成設定後，Dashboard 將顯示你的真實數據，並由 AI 提供每週行銷建議。<br>整個過程不需要技術背景，約 10 分鐘完成。</p>
   </div>
 
@@ -322,7 +341,7 @@
         <div class="section-title">Google Ads <span class="optional-tag">選填</span></div>
         <div class="section-sub">廣告花費、ROAS、關鍵字轉換成本</div>
       </div>
-      <div class="section-badge"><span style="font-size:10px;color:var(--text-secondary)">選填</span></div>
+      <div class="section-badge"><span class="badge badge-yellow" id="badge-gads">待完成</span></div>
       <i class="ti ti-chevron-down section-chevron" aria-hidden="true"></i>
     </div>
 
@@ -399,7 +418,7 @@
         <div class="section-title">Meta Ads（Facebook / Instagram）<span class="optional-tag">選填</span></div>
         <div class="section-sub">FB/IG 廣告花費、ROAS、受眾觸及數據</div>
       </div>
-      <div class="section-badge"><span style="font-size:10px;color:var(--text-secondary)">選填</span></div>
+      <div class="section-badge"><span class="badge badge-yellow" id="badge-meta">待完成</span></div>
       <i class="ti ti-chevron-down section-chevron" aria-hidden="true"></i>
     </div>
 
@@ -784,8 +803,73 @@ const style = document.createElement('style');
 style.textContent = '@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }';
 document.head.appendChild(style);
 
-// ── 頁面載入：讀取既有設定 ──────────────────
+// ── 頁面載入：讀取與重設目前設定 ───────────────
 async function loadCurrentSettings() {
+  // 1. 重設所有表單欄位與狀態標記以支援專案切換
+  document.getElementById('ga4-property-id').value = '';
+  document.getElementById('ga4-json').value = '';
+  document.getElementById('ga4-json').classList.remove('success', 'error');
+  document.getElementById('badge-ga4').textContent = '待完成';
+  document.getElementById('badge-ga4').className = 'badge badge-yellow';
+  const ga4FilenameEl = document.getElementById('ga4-filename');
+  if (ga4FilenameEl) {
+    ga4FilenameEl.textContent = '';
+    ga4FilenameEl.style.display = 'none';
+  }
+  const ga4StatusEl = document.getElementById('ga4-status');
+  if (ga4StatusEl) {
+    ga4StatusEl.style.display = 'none';
+    ga4StatusEl.innerHTML = '';
+  }
+
+  document.getElementById('gsc-site-url').value = '';
+  document.getElementById('badge-gsc').textContent = '待完成';
+  document.getElementById('badge-gsc').className = 'badge badge-yellow';
+  const gscStatusEl = document.getElementById('gsc-status');
+  if (gscStatusEl) {
+    gscStatusEl.style.display = 'none';
+    gscStatusEl.innerHTML = '';
+  }
+
+  document.getElementById('gads-customer-id').value = '';
+  document.getElementById('gads-developer-token').value = '';
+  document.getElementById('gads-client-id').value = '';
+  document.getElementById('gads-client-secret').value = '';
+  document.getElementById('gads-refresh-token').value = '';
+  const badgeGads = document.getElementById('badge-gads');
+  if (badgeGads) {
+    badgeGads.textContent = '待完成';
+    badgeGads.className = 'badge badge-yellow';
+  }
+  const gadsStatusEl = document.getElementById('gads-status');
+  if (gadsStatusEl) {
+    gadsStatusEl.style.display = 'none';
+    gadsStatusEl.innerHTML = '';
+  }
+
+  document.getElementById('meta-account-id').value = '';
+  document.getElementById('meta-token').value = '';
+  const badgeMeta = document.getElementById('badge-meta');
+  if (badgeMeta) {
+    badgeMeta.textContent = '待完成';
+    badgeMeta.className = 'badge badge-yellow';
+  }
+  const metaStatusEl = document.getElementById('meta-status');
+  if (metaStatusEl) {
+    metaStatusEl.style.display = 'none';
+    metaStatusEl.innerHTML = '';
+  }
+
+  document.getElementById('openai-key').value = '';
+  document.getElementById('badge-ai').textContent = '待設定';
+  document.getElementById('badge-ai').className = 'badge badge-yellow';
+  const aiStatusEl = document.getElementById('ai-status');
+  if (aiStatusEl) {
+    aiStatusEl.style.display = 'none';
+    aiStatusEl.innerHTML = '';
+  }
+
+  // 2. 向後端讀取作用中專案的設定
   try {
     const res = await fetch(`${API_BASE}/api/settings`);
     if (!res.ok) return;
@@ -811,24 +895,219 @@ async function loadCurrentSettings() {
       document.getElementById('gads-client-secret').value = s.gads_client_secret || '';
       document.getElementById('gads-refresh-token').value = s.gads_refresh_token || '';
       
-      document.getElementById('badge-gads').textContent = '✓ 已完成';
-      document.getElementById('badge-gads').className = 'badge badge-green';
+      if (badgeGads) {
+        badgeGads.textContent = '✓ 已完成';
+        badgeGads.className = 'badge badge-green';
+      }
     }
     if (s.meta_account_id) {
       document.getElementById('meta-account-id').value = s.meta_account_id;
       document.getElementById('meta-token').value = s.meta_token || '';
       
-      document.getElementById('badge-meta').textContent = '✓ 已完成';
-      document.getElementById('badge-meta').className = 'badge badge-green';
+      if (badgeMeta) {
+        badgeMeta.textContent = '✓ 已完成';
+        badgeMeta.className = 'badge badge-green';
+      }
     }
     if (s.openai_configured) {
       document.getElementById('badge-ai').textContent = '✓ 已完成';
       document.getElementById('badge-ai').className = 'badge badge-green';
     }
-  } catch { /* 後端未啟動，不影響頁面載入 */ }
+  } catch (err) {
+    console.error('Failed to load current settings:', err);
+  }
 }
 
-document.addEventListener('DOMContentLoaded', loadCurrentSettings);
+// ── 多公司/專案管理與初始化 ─────────────────────
+async function initProfiles() {
+  const selectorBtn = document.getElementById('project-selector-btn');
+  const dropdown = document.getElementById('project-dropdown');
+  const listContainer = document.getElementById('project-list-items');
+  const addBtn = document.getElementById('btn-add-project-trigger');
+  
+  if (!selectorBtn || !dropdown || !listContainer) return;
+  
+  // 點擊按鈕切換下拉選單顯示/隱藏
+  selectorBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle('show');
+    selectorBtn.classList.toggle('open');
+  });
+  
+  // 點擊外面關閉選單
+  document.addEventListener('click', () => {
+    dropdown.classList.remove('show');
+    selectorBtn.classList.remove('open');
+  });
+  
+  // 點擊「新增專案」
+  if (addBtn) {
+    addBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropdown.classList.remove('show');
+      selectorBtn.classList.remove('open');
+      openModal('modal-create-project');
+    });
+  }
+  
+  // 新增專案彈窗的送出按鈕
+  const submitBtn = document.getElementById('btn-submit-create-project');
+  if (submitBtn) {
+    submitBtn.addEventListener('click', async () => {
+      const nameInput = document.getElementById('new-project-name');
+      const name = nameInput.value.trim();
+      if (!name) { alert('請輸入公司/專案名稱'); return; }
+      
+      try {
+        const res = await fetch(`${API_BASE}/api/profiles/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
+        });
+        if (res.ok) {
+          nameInput.value = '';
+          closeModal('modal-create-project');
+          // 重新載入與更新專案，並重整設定表單
+          await loadProfiles();
+          await loadCurrentSettings();
+        } else {
+          alert('建立專案失敗');
+        }
+      } catch (e) {
+        console.error('Create profile failed:', e);
+        alert('無法連接到後端伺服器');
+      }
+    });
+  }
+  
+  // 載入專案清單
+  await loadProfiles();
+}
+
+async function loadProfiles() {
+  const listContainer = document.getElementById('project-list-items');
+  const activeNameEl = document.getElementById('active-project-name');
+  const activeTitleNameEl = document.getElementById('active-project-title-name');
+  if (!listContainer) return;
+  
+  try {
+    const res = await fetch(`${API_BASE}/api/profiles`);
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    
+    const activeId = data.active_profile_id;
+    const profiles = data.profiles;
+    
+    // 找出當前 active 的專案名稱
+    const activeProfile = profiles.find(p => p.id === activeId);
+    const activeName = activeProfile ? activeProfile.name : '預設專案 (公司 A)';
+    if (activeNameEl) activeNameEl.textContent = activeName;
+    if (activeTitleNameEl) activeTitleNameEl.textContent = activeName;
+    
+    // 渲染下拉選單列表
+    listContainer.innerHTML = profiles.map(p => `
+      <div class="project-item ${p.id === activeId ? 'active' : ''}" data-id="${p.id}">
+        <span class="project-item-name">${p.name}</span>
+        ${p.id !== 'default' ? `<span class="project-item-delete" data-id="${p.id}" title="刪除專案">×</span>` : ''}
+      </div>
+    `).join('');
+    
+    // 綁定項目點擊事件（切換專案）
+    document.querySelectorAll('.project-item').forEach(item => {
+      item.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const profileId = item.getAttribute('data-id');
+        if (e.target.classList.contains('project-item-delete')) return;
+        
+        await switchProfile(profileId);
+      });
+    });
+    
+    // 綁定刪除專案點擊事件
+    document.querySelectorAll('.project-item-delete').forEach(delBtn => {
+      delBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const profileId = delBtn.getAttribute('data-id');
+        const p = profiles.find(x => x.id === profileId);
+        if (!p) return;
+        
+        if (confirm(`確定要刪除「${p.name}」專案嗎？\n這會將此專案的所有串接設定與金鑰檔案一併刪除且無法復原。`)) {
+          await deleteProfile(profileId);
+        }
+      });
+    });
+    
+  } catch (err) {
+    console.error('Failed to load profiles:', err);
+    if (activeNameEl) activeNameEl.textContent = '預設專案 (公司 A)';
+    if (activeTitleNameEl) activeTitleNameEl.textContent = '預設專案 (公司 A)';
+  }
+}
+
+async function switchProfile(profileId) {
+  try {
+    const res = await fetch(`${API_BASE}/api/profiles/switch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profile_id: profileId })
+    });
+    if (res.ok) {
+      document.getElementById('project-dropdown').classList.remove('show');
+      document.getElementById('project-selector-btn').classList.remove('open');
+      
+      await loadProfiles();
+      await loadCurrentSettings();
+    }
+  } catch (e) {
+    console.error('Switch profile failed:', e);
+    alert('切換專案失敗');
+  }
+}
+
+async function deleteProfile(profileId) {
+  try {
+    const res = await fetch(`${API_BASE}/api/profiles/${profileId}`, {
+      method: 'DELETE'
+    });
+    if (res.ok) {
+      await loadProfiles();
+      await loadCurrentSettings();
+    }
+  } catch (e) {
+    console.error('Delete profile failed:', e);
+    alert('刪除專案失敗');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await initProfiles();
+  await loadCurrentSettings();
+});
 </script>
+  <!-- Modal：新增專案 -->
+  <div class="modal-bg" id="modal-create-project" onclick="closeOnBg(event,'modal-create-project')" role="dialog" aria-modal="true" aria-labelledby="mcp-title">
+    <div class="modal">
+      <div class="modal-head">
+        <h2 class="modal-title" id="mcp-title">新增公司專案</h2>
+        <button class="modal-close" onclick="closeModal('modal-create-project')" aria-label="關閉">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label for="new-project-name">公司 / 專案名稱 <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="new-project-name" placeholder="例如：公司 B - 品牌官網" class="no-icon">
+        </div>
+        <button class="save-btn" id="btn-submit-create-project" style="margin-top:10px">
+          <i class="ti ti-plus" aria-hidden="true"></i> 建立並切換專案
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal helper functions -->
+  <script>
+    function openModal(id) { document.getElementById(id).classList.add('show'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+    function closeOnBg(event, id) { if (event.target === document.getElementById(id)) closeModal(id); }
+  </script>
 </body>
 </html>

@@ -16,10 +16,20 @@
        TOP BAR
   ═══════════════════════════════════════════ -->
   <header class="topbar">
-    <div class="brand">
-      <div class="brand-dot" aria-hidden="true"></div>
-      AI Data Studio
-      <span class="brand-version">Beta</span>
+    <div class="project-selector" id="project-selector-btn" role="button" aria-haspopup="listbox" aria-expanded="false">
+      <div class="brand-dot"></div>
+      <span id="active-project-name">載入中...</span>
+      <i class="ti ti-chevron-down" aria-hidden="true"></i>
+      
+      <div class="project-dropdown" id="project-dropdown">
+        <div class="project-list" id="project-list-items" role="listbox">
+          <!-- JS 動態載入專案清單 -->
+        </div>
+        <div class="dropdown-divider"></div>
+        <div class="project-action" id="btn-add-project-trigger">
+          <i class="ti ti-plus" aria-hidden="true"></i> 新增公司專案...
+        </div>
+      </div>
     </div>
     <nav class="tabs" role="tablist" aria-label="主要頁籤">
       <button class="tab on" role="tab" aria-selected="true"  onclick="goTab(0)">總覽</button>
@@ -29,10 +39,16 @@
       <button class="tab"    role="tab" aria-selected="false" onclick="goTab(4)">串接教學</button>
     </nav>
     <div class="topbar-right">
-      <div class="date-picker" role="button" aria-label="選擇日期範圍" tabindex="0">
+      <div class="date-picker" role="button" aria-label="選擇日期範圍" tabindex="0" id="date-picker-btn">
         <i class="ti ti-calendar" aria-hidden="true"></i>
-        <span id="date-label">2025/05/26 — 06/08</span>
+        <span id="date-label">最近 30 天</span>
         <i class="ti ti-chevron-down" aria-hidden="true"></i>
+        <div class="date-dropdown" id="date-dropdown">
+          <div class="date-option" data-range="7">最近 7 天</div>
+          <div class="date-option" data-range="14">最近 14 天</div>
+          <div class="date-option active" data-range="30">最近 30 天</div>
+          <div class="date-option" data-range="90">最近 90 天</div>
+        </div>
       </div>
       <div class="status-dot" id="status-dot" title="數據連線狀態"></div>
       <button class="btn-primary" onclick="window.location.href='settings.html'">
@@ -608,6 +624,25 @@
           <li><div class="step-title">貼上你的 Property ID 或金鑰</div><div class="step-desc">GA4 評估 ID 格式像 G-XXXXXXXXXX，在 GA4 後台「管理」→「資料串流」裡找得到。</div><span class="step-tag">不需要工程師</span></li>
           <li><div class="step-title">數據自動載入 Dashboard</div><div class="step-desc">串接完成後，頁面會自動抓取你的真實數據，AI 也會開始分析並給出本週建議。</div><span class="step-tag">自動完成</span></li>
         </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal：新增專案 -->
+  <div class="modal-bg" id="modal-create-project" onclick="closeOnBg(event,'modal-create-project')" role="dialog" aria-modal="true" aria-labelledby="mcp-title">
+    <div class="modal">
+      <div class="modal-head">
+        <h2 class="modal-title" id="mcp-title">新增公司專案</h2>
+        <button class="modal-close" onclick="closeModal('modal-create-project')" aria-label="關閉">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label for="new-project-name">公司 / 專案名稱 <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="new-project-name" placeholder="例如：公司 B - 品牌官網" class="no-icon">
+        </div>
+        <button class="save-btn" id="btn-submit-create-project" style="margin-top:10px">
+          <i class="ti ti-plus" aria-hidden="true"></i> 建立並切換專案
+        </button>
       </div>
     </div>
   </div>
