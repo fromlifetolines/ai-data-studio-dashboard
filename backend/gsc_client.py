@@ -6,24 +6,33 @@ Google Search Console API 封裝模組
 import re
 import urllib.parse
 from datetime import datetime, timedelta
+from typing import Optional
 import httpx
 from google.oauth2 import service_account
+from google.oauth2.credentials import Credentials as OAuthCredentials
 import google.auth.transport.requests
 
 class GSCClient:
-    def __init__(self, credentials_path: str, site_url: str):
-        self.credentials_path = credentials_path
-        # 自動校正網站 URL：若沒有 http/https 且沒有 sc-domain: 開頭，自動加上 sc-domain:
+    def __init__(self, site_url: str, credentials_path: Optional[str] = None,
+                 oauth_credentials: Optional[OAuthCredentials] = None):
+        # 自動校正網站 URL
         site_url = site_url.strip()
         if not site_url.startswith("http://") and not site_url.startswith("https://") and not site_url.startswith("sc-domain:"):
             self.site_url = f"sc-domain:{site_url}"
         else:
             self.site_url = site_url
-            
-        self.credentials = service_account.Credentials.from_service_account_file(
-            credentials_path,
-            scopes=["https://www.googleapis.com/auth/webmasters.readonly"]
-        )
+
+        if oauth_credentials:
+            # 新方式：OAuth 個人帳號
+            self.credentials = oauth_credentials
+        elif credentials_path:
+            # 舊方式：Service Account JSON
+            self.credentials = service_account.Credentials.from_service_account_file(
+                credentials_path,
+                scopes=["https://www.googleapis.com/auth/webmasters.readonly"]
+            )
+        else:
+            raise ValueError("GSCClient 需要提供 credentials_path 或 oauth_credentials 其中一個")
 
     def _get_access_token(self) -> str:
         """獲取存取權杖"""

@@ -4,33 +4,45 @@ GA4 Data API 封裝模組
 
 依賴：
   google-analytics-data
+  google-auth-oauthlib
 
 安裝：
-  pip install google-analytics-data
+  pip install google-analytics-data google-auth-oauthlib
 """
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Union
 from google.analytics.data_v1beta import BetaAnalyticsDataClient
 from google.analytics.data_v1beta.types import (
     RunReportRequest, DateRange, Metric, Dimension, OrderBy, Filter, FilterExpression
 )
 from google.oauth2 import service_account
+from google.oauth2.credentials import Credentials as OAuthCredentials
 
 
 @dataclass
 class GA4Config:
-    property_id: str      # 格式：properties/123456789
-    credentials_path: str # Service Account JSON 路徑
+    property_id: str                          # 格式：properties/123456789
+    credentials_path: Optional[str] = None    # Service Account JSON 路徑（舊方式）
+    oauth_credentials: Optional[OAuthCredentials] = None  # OAuth 個人帳號（新方式）
 
 
 class GA4Client:
     def __init__(self, config: GA4Config):
         self.property_id = config.property_id
-        credentials = service_account.Credentials.from_service_account_file(
-            config.credentials_path,
-            scopes=["https://www.googleapis.com/auth/analytics.readonly"]
-        )
+
+        if config.oauth_credentials:
+            # 新方式：OAuth 個人帳號
+            credentials = config.oauth_credentials
+        elif config.credentials_path:
+            # 舊方式：Service Account JSON
+            credentials = service_account.Credentials.from_service_account_file(
+                config.credentials_path,
+                scopes=["https://www.googleapis.com/auth/analytics.readonly"]
+            )
+        else:
+            raise ValueError("GA4Config 需要提供 credentials_path 或 oauth_credentials 其中一個")
+
         self.client = BetaAnalyticsDataClient(credentials=credentials)
 
     # ── 連線測試 ────────────────────────────────────

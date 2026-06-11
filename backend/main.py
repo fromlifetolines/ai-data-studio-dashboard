@@ -27,6 +27,7 @@ from ai_insight_engine import generate_insight, generate_chat_reply
 from gsc_client import GSCClient
 from gads_client import GoogleAdsClient
 from meta_client import MetaAdsClient
+import oauth_manager
 
 # ── App 初始化 ────────────────────────────────────────
 app = FastAPI(
@@ -55,7 +56,7 @@ CREDENTIALS_DIR.mkdir(exist_ok=True)
 
 class GA4Settings(BaseModel):
     property_id: str           # 例：properties/123456789
-    credentials_json: str      # Service Account JSON 內容（字串）
+    credentials_json: Optional[str] = None      # Service Account JSON 內容（字串）
 
 class GSCSettings(BaseModel):
     site_url: str
@@ -80,7 +81,7 @@ class SaveSettingsRequest(BaseModel):
 
 class ValidateRequest(BaseModel):
     property_id: str
-    credentials_json: str
+    credentials_json: Optional[str] = None
 
 class GSCValidateRequest(BaseModel):
     site_url: str
@@ -222,22 +223,58 @@ def get_credentials_path(profile_id: Optional[str] = None) -> Optional[Path]:
 async def health_check():
     """健康檢查 + 設定狀態"""
     settings = load_settings()
-    cred_path = get_credentials_path()
+    auth = oauth_manager.get_auth_status()
+    oauth_ok = auth["authenticated"]
+    # 向後相容：如果沒有 OAuth，檢查舊 service account
+    cred_path = get_credentials_path() if not oauth_ok else None
 
     return {
         "status": "ok",
         "version": "1.0.0",
         "config": {
-            "ga4_configured":         bool(settings.get("ga4_property_id")) and cred_path is not None,
-            "ga4_property_id":        settings.get("ga4_property_id", ""),
-            "openai_configured":      bool(settings.get("openai_key") or os.getenv("OPENAI_API_KEY")),
-            "credentials_file_exists": cred_path is not None,
-            "gsc_configured":          bool(settings.get("gsc_site_url")) and cred_path is not None,
+            "ga4_configured":          bool(settings.get("ga4_property_id")) and (oauth_ok or cred_path is not None),
+            "ga4_property_id":         settings.get("ga4_property_id", ""),
+            "openai_configured":       bool(settings.get("openai_key") or os.getenv("OPENAI_API_KEY")),
+            "oauth_authenticated":     oauth_ok,
+            "oauth_email":             auth.get("email"),
+            "credentials_file_exists": oauth_ok or cred_path is not None,
+            "gsc_configured":          bool(settings.get("gsc_site_url")) and (oauth_ok or cred_path is not None),
             "gads_configured":         bool(settings.get("gads_customer_id")),
             "meta_configured":         bool(settings.get("meta_account_id")),
-            "demo_mode":              not (bool(settings.get("ga4_property_id")) and cred_path is not None),
+            "demo_mode":              not (bool(settings.get("ga4_property_id")) and (oauth_ok or cred_path is not None)),
         }
     }
+
+# ── OAuth 認證 ────────────────────────────────────────
+@app.get("/api/auth/status")
+async def auth_status():
+    """回傳目前 OAuth 授權狀態"""
+    return oauth_manager.get_auth_status()
+
+@app.post("/api/auth/login")
+async def auth_login():
+    """
+    啟動 OAuth 授權流程。
+    會自動開啟瀏覽器到 Google 登入頁面。
+    這個端點是同步的，最多等 60 秒，完成後回傳 email。
+    """
+    try:
+        result = oauth_manager.start_auth_flow()
+        email = result.get("email", "")
+        # 儲存 email 到 token 檔案
+        if email:
+            oauth_manager.save_email_to_token(email)
+        return {"success": True, "email": email, "message": f"授權成功！帳號：{email}"}
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"授權失敗：{str(e)}")
+
+@app.post("/api/auth/logout")
+async def auth_logout():
+    """清除儲存的 OAuth token（登出）"""
+    oauth_manager.revoke_credentials()
+    return {"success": True, "message": "已登出，OAuth token 已清除"}
 
 # ── 專案/多公司管理 ────────────────────────────────────
 @app.get("/api/profiles")
@@ -347,15 +384,16 @@ async def save_api_settings(req: SaveSettingsRequest):
             prop_id = f"properties/{prop_id}"
         settings["ga4_property_id"] = prop_id
 
-        # 儲存 Service Account JSON 到 credentials/ 目錄
-        active_id = get_active_profile_id()
-        cred_path = CREDENTIALS_DIR / f"service-account-{active_id}.json"
-        try:
-            parsed = json.loads(req.ga4.credentials_json)
-            with open(cred_path, "w", encoding="utf-8") as f:
-                json.dump(parsed, f, ensure_ascii=False, indent=2)
-        except json.JSONDecodeError:
-            raise HTTPException(status_code=400, detail="Service Account JSON 格式錯誤，請確認內容是完整的 JSON 格式。")
+        # 儲存 Service Account JSON 到 credentials/ 目錄 (如果提供了)
+        if req.ga4.credentials_json:
+            active_id = get_active_profile_id()
+            cred_path = CREDENTIALS_DIR / f"service-account-{active_id}.json"
+            try:
+                parsed = json.loads(req.ga4.credentials_json)
+                with open(cred_path, "w", encoding="utf-8") as f:
+                    json.dump(parsed, f, ensure_ascii=False, indent=2)
+            except json.JSONDecodeError:
+                raise HTTPException(status_code=400, detail="Service Account JSON 格式錯誤，請確認內容是完整的 JSON 格式。")
 
     if req.gsc:
         settings["gsc_site_url"] = req.gsc.site_url.strip()
@@ -381,47 +419,62 @@ async def save_api_settings(req: SaveSettingsRequest):
 @app.post("/api/settings/validate-ga4")
 async def validate_ga4(req: ValidateRequest):
     """
-    驗證 GA4 Property ID + Service Account 是否能成功連線
+    驗證 GA4 Property ID + 授權是否能成功連線。
+    如果已有 OAuth 就用 OAuth，否則嘗試使用樔上傳的 Service Account JSON。
     """
     try:
-        # 暫時寫入 credentials 測試
-        active_id = get_active_profile_id()
-        temp_path = CREDENTIALS_DIR / f"service-account-{active_id}.json"
-        parsed = json.loads(req.credentials_json)
-        with open(temp_path, "w") as f:
-            json.dump(parsed, f)
-
         prop_id = req.property_id
         if not prop_id.startswith("properties/"):
             prop_id = f"properties/{prop_id}"
 
-        config = GA4Config(
-            property_id=prop_id,
-            credentials_path=str(temp_path)
-        )
+        # 優先使用 OAuth
+        oauth_creds = oauth_manager.get_credentials()
+        if oauth_creds:
+            config = GA4Config(
+                property_id=prop_id,
+                oauth_credentials=oauth_creds
+            )
+        elif req.credentials_json:
+            active_id = get_active_profile_id()
+            temp_path = CREDENTIALS_DIR / f"service-account-{active_id}.json"
+            parsed = json.loads(req.credentials_json)
+            with open(temp_path, "w") as f:
+                json.dump(parsed, f)
+            config = GA4Config(
+                property_id=prop_id,
+                credentials_path=str(temp_path)
+            )
+        else:
+            raise HTTPException(status_code=400, detail="請先連結 Google 帳號，或上傳 Service Account JSON")
+
         client = GA4Client(config)
         result = client.test_connection()
-
         return {"success": True, "message": "GA4 連線成功！", "property_name": result.get("name", "")}
 
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Service Account JSON 格式錯誤")
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"連線失敗：{str(e)}")
 
 # ── 驗證 Search Console 連線 ───────────────────────────
 @app.post("/api/settings/validate-gsc")
 async def validate_gsc(req: GSCValidateRequest):
-    """
-    驗證 Search Console 連線
-    """
-    cred_path = get_credentials_path()
-    if not cred_path:
-        raise HTTPException(status_code=400, detail="請先上傳或貼上 GA4 的 Service Account JSON，兩者使用相同金鑰。")
+    """驗證 Search Console 連線"""
     try:
-        client = GSCClient(str(cred_path), req.site_url)
+        oauth_creds = oauth_manager.get_credentials()
+        if oauth_creds:
+            client = GSCClient(site_url=req.site_url, oauth_credentials=oauth_creds)
+        else:
+            cred_path = get_credentials_path()
+            if not cred_path:
+                raise HTTPException(status_code=400, detail="請先連結 Google 帳號，或先設定 GA4 Service Account")
+            client = GSCClient(site_url=req.site_url, credentials_path=str(cred_path))
         result = client.test_connection()
         return {"success": True, "message": f"Search Console 連線成功！已連接到 {result['site']}"}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"連線失敗：{str(e)}")
 

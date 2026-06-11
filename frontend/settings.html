@@ -213,8 +213,6 @@
     </div>
     <div class="progress-step" id="ps-meta">
       <div class="ps-circle">4</div>
-      <div class="ps-label">Meta Ads</div>
-    </div>
     <div class="progress-step" id="ps-ai">
       <div class="ps-circle">5</div>
       <div class="ps-label">AI 分析</div>
@@ -222,59 +220,83 @@
   </div>
 
   <!-- ══════════════════════════════════════
-       STEP 1：GA4
+       STEP 1：Google 帳號認證（GA4 + GSC）
   ══════════════════════════════════════ -->
   <div class="setup-section open" id="sec-ga4">
     <div class="setup-section-head" onclick="toggleSection('sec-ga4')">
       <div class="section-icon" style="background:#EFF6FF"><i class="ti ti-brand-google" style="color:#1d4ed8" aria-hidden="true"></i></div>
       <div class="section-info">
-        <div class="section-title">Google Analytics 4（GA4）</div>
-        <div class="section-sub">網站流量、用戶行為、轉換率 — 必要串接</div>
+        <div class="section-title">Google 帳號認證（GA4 + Search Console）</div>
+        <div class="section-sub">連結您的 Google 帳號，同步授權 GA4 與 Search Console</div>
       </div>
       <div class="section-badge"><span class="badge badge-yellow" id="badge-ga4">待完成</span></div>
       <i class="ti ti-chevron-down section-chevron" aria-hidden="true"></i>
     </div>
 
     <div class="setup-section-body">
-      <div class="step-instruction">
-        <strong style="font-size:11px;display:block;margin-bottom:6px">📋 如何取得以下資訊（依序操作）</strong>
-        <ol>
-          <li>前往 <a href="https://analytics.google.com" target="_blank">analytics.google.com</a></li>
-          <li>點擊左下角「管理（齒輪）」→「資料串流」→ 點選你的網站</li>
-          <li>複製右上角的 <strong>評估 ID</strong>（格式：G-XXXXXXXXXX）</li>
-          <li>前往 <a href="https://console.cloud.google.com" target="_blank">Google Cloud Console</a> → 建立或選擇專案</li>
-          <li>「API 與服務」→ 啟用「Google Analytics Data API」</li>
-          <li>「IAM 與管理」→「服務帳戶」→ 建立服務帳戶 → 下載 JSON 金鑰</li>
-          <li>回到 GA4 後台「管理」→「帳戶存取管理」→ 加入服務帳戶 Email（<strong>查看者</strong>權限）</li>
-        </ol>
+
+      <!-- Google 帳號連結卡片 -->
+      <div id="google-auth-card" style="
+        border-radius:12px;
+        border:2px solid #e0e7ff;
+        background:linear-gradient(135deg,#f0f4ff 0%,#e8f5e9 100%);
+        padding:20px 24px;
+        margin-bottom:18px;
+        display:flex;
+        align-items:center;
+        gap:18px;
+        flex-wrap:wrap;
+      ">
+        <div id="google-auth-avatar" style="width:52px;height:52px;border-radius:50%;background:#e0e7ff;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">
+          👤
+        </div>
+        <div style="flex:1;min-width:180px">
+          <div id="google-auth-name" style="font-weight:700;font-size:15px;color:#1e293b">尚未連結 Google 帳號</div>
+          <div id="google-auth-email" style="font-size:12px;color:#64748b;margin-top:2px">點擊下方按鈕進行授權</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button id="btn-google-login" onclick="connectGoogleAccount()" style="
+            display:flex;align-items:center;gap:8px;
+            background:#fff;
+            border:1.5px solid #4285F4;
+            color:#4285F4;
+            font-weight:600;
+            font-size:13px;
+            padding:9px 18px;
+            border-radius:8px;
+            cursor:pointer;
+            transition:all .2s;
+          " onmouseover="this.style.background='#4285F4';this.style.color='#fff'" onmouseout="this.style.background='#fff';this.style.color='#4285F4'">
+            <i class="ti ti-brand-google"></i> 連結 Google 帳號
+          </button>
+          <button id="btn-google-logout" onclick="disconnectGoogleAccount()" style="
+            display:none;
+            align-items:center;gap:8px;
+            background:#fff;
+            border:1.5px solid #ef4444;
+            color:#ef4444;
+            font-weight:600;
+            font-size:13px;
+            padding:9px 18px;
+            border-radius:8px;
+            cursor:pointer;
+            transition:all .2s;
+          " onmouseover="this.style.background='#ef4444';this.style.color='#fff'" onmouseout="this.style.background='#fff';this.style.color='#ef4444'">
+            <i class="ti ti-logout"></i> 斷開連結
+          </button>
+        </div>
       </div>
 
+      <div id="google-auth-status" style="display:none;margin-bottom:12px" class="status-msg"></div>
+
+      <!-- GA4 Property ID -->
       <div class="field">
-        <label for="ga4-property-id">GA4 評估 ID <span style="color:var(--danger)">*</span></label>
+        <label for="ga4-property-id">GA4 Property ID <span style="color:var(--danger)">*</span></label>
         <div class="input-wrap">
           <i class="ti ti-key" aria-hidden="true"></i>
-          <input type="text" id="ga4-property-id" placeholder="G-XXXXXXXXXX 或 properties/123456789" autocomplete="off">
+          <input type="text" id="ga4-property-id" placeholder="properties/123456789" autocomplete="off">
         </div>
-        <div class="hint">在 GA4「管理」→「資料串流」→ 點入你的網站 → 右上角「評估 ID」</div>
-      </div>
-
-      <div class="field">
-        <label>Service Account JSON 金鑰 <span style="color:var(--danger)">*</span></label>
-        <div class="upload-zone" id="upload-zone-ga4" onclick="document.getElementById('file-input-ga4').click()"
-             ondragover="handleDragOver(event,'upload-zone-ga4')"
-             ondragleave="handleDragLeave(event,'upload-zone-ga4')"
-             ondrop="handleDrop(event,'upload-zone-ga4','ga4-json')">
-          <input type="file" id="file-input-ga4" accept=".json" onchange="handleFileSelect(event,'ga4-json','upload-zone-ga4')">
-          <i class="ti ti-file-upload" aria-hidden="true"></i>
-          <p>點擊或拖曳 JSON 金鑰檔案到這裡</p>
-          <p style="font-size:10px">從 Google Cloud Console 下載的 service-account-xxxx.json</p>
-          <div class="upload-filename" id="ga4-filename" style="display:none"></div>
-        </div>
-
-        <div class="divider"><span>或直接貼上 JSON 內容</span></div>
-
-        <textarea id="ga4-json" placeholder='{"type": "service_account", "project_id": "...", "private_key": "...", ...}' oninput="handleJsonInput('ga4-json')"></textarea>
-        <div class="hint">JSON 金鑰包含 private_key 欄位，這是存取 GA4 的憑證，請勿分享給他人。</div>
+        <div class="hint">在 GA4「管理」→「資料串流」→ 點入你的網站 → 查看「計數 ID」（格式：G-XXXXXXXXXX 或 properties/123456）</div>
       </div>
 
       <div id="ga4-status" style="display:none" class="status-msg"></div>
@@ -282,7 +304,6 @@
       <button class="validate-btn" id="btn-validate-ga4" onclick="validateGA4()">
         <i class="ti ti-plug" aria-hidden="true"></i> 驗證 GA4 連線
       </button>
-    </div>
   </div>
 
   <!-- ══════════════════════════════════════
@@ -300,14 +321,8 @@
     </div>
 
     <div class="setup-section-body">
-      <div class="step-instruction">
-        <strong style="font-size:11px;display:block;margin-bottom:6px">📋 如何取得以下資訊</strong>
-        <ol>
-          <li>前往 <a href="https://search.google.com/search-console" target="_blank">search.google.com/search-console</a></li>
-          <li>確認你的網站已驗證（左側能看到你的 domain）</li>
-          <li>複製你的網站 URL（例：https://yoursite.com 或 sc-domain:yoursite.com）</li>
-          <li>在 Search Console「設定」→「使用者與權限」→ 加入 Service Account Email（與 GA4 相同金鑰即可）</li>
-        </ol>
+      <div class="hint" style="background:#f0fdf4;border:1px solid #86efac;border-radius:var(--radius-md);padding:10px 12px;font-size:12px;line-height:1.65;margin-bottom:14px">
+        <strong>✨ 已自動共用 Google 帳號授權</strong>——上方連結 Google 帳號後，Search Console 不需要再另外設定，直接填入網站網址驗證即可。
       </div>
 
       <div class="field">
@@ -317,10 +332,6 @@
           <input type="text" id="gsc-site-url" placeholder="https://yoursite.com">
         </div>
         <div class="hint">與你在 Search Console 驗證的網站 URL 完全一致（注意有沒有 / 結尾）</div>
-      </div>
-
-      <div class="hint" style="background:var(--accent-light);border:1px solid var(--accent-mid);border-radius:var(--radius-md);padding:10px 12px;font-size:11px;line-height:1.65">
-        <strong>💡 小提示：</strong>Search Console 使用與 GA4 相同的 Service Account JSON 金鑰，上面填好 GA4 金鑰後這裡不需要再上傳。
       </div>
 
       <div id="gsc-status" style="display:none;margin-top:10px" class="status-msg"></div>
@@ -512,6 +523,11 @@
 <script>
 const API_BASE = 'http://127.0.0.1:8000';
 
+// 頁面載入完成後，自動檢查 Google 帳號授權狀態
+document.addEventListener('DOMContentLoaded', () => {
+  checkAuthStatus();
+});
+
 // ── 展開 / 收合 ──────────────────────────────
 function toggleSection(id) {
   document.getElementById(id).classList.toggle('open');
@@ -525,6 +541,113 @@ function showStatus(elId, type, msg) {
   el.className = `status-msg ${type}`;
   const icon = { success: 'ti-circle-check', error: 'ti-alert-circle', info: 'ti-info-circle' }[type];
   el.innerHTML = `<i class="ti ${icon}" aria-hidden="true"></i><span>${msg}</span>`;
+}
+
+// ── Google OAuth 連結 ──────────────────────────────
+
+async function checkAuthStatus() {
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/status`);
+    const data = await res.json();
+    updateAuthUI(data);
+  } catch (e) {
+    console.warn('[Auth] 無法取得授權狀態');
+  }
+}
+
+function updateAuthUI(data) {
+  const avatar   = document.getElementById('google-auth-avatar');
+  const name     = document.getElementById('google-auth-name');
+  const email    = document.getElementById('google-auth-email');
+  const loginBtn = document.getElementById('btn-google-login');
+  const logoutBtn= document.getElementById('btn-google-logout');
+  const badge    = document.getElementById('badge-ga4');
+
+  if (data.authenticated && data.email) {
+    avatar.textContent = '✅';
+    avatar.style.background = '#dcfce7';
+    name.textContent = '已連結 Google 帳號';
+    email.textContent = data.email;
+    loginBtn.style.display = 'none';
+    logoutBtn.style.display = 'flex';
+    badge.textContent = '✓ 已授權';
+    badge.className = 'badge badge-green';
+  } else {
+    avatar.textContent = '👤';
+    avatar.style.background = '#e0e7ff';
+    name.textContent = '尚未連結 Google 帳號';
+    email.textContent = '點擊下方按鈕進行授權';
+    loginBtn.style.display = 'flex';
+    logoutBtn.style.display = 'none';
+    badge.textContent = '待完成';
+    badge.className = 'badge badge-yellow';
+  }
+}
+
+async function connectGoogleAccount() {
+  const statusEl = document.getElementById('google-auth-status');
+  showStatus('google-auth-status', 'info', '🔄 正在開啟瀑覽器進行授權，請在彈出的視窗中登入您的 Google 帳號並按「允許」……');
+  const btn = document.getElementById('btn-google-login');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> 授權中…';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/login`, { method: 'POST' });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showStatus('google-auth-status', 'success', `✓ ${data.message}`);
+      updateAuthUI({ authenticated: true, email: data.email });
+    } else {
+      showStatus('google-auth-status', 'error', data.detail || '授權失敗，請再試');
+    }
+  } catch (e) {
+    showStatus('google-auth-status', 'error', '無法連接後端，請確認伺服器已啟動');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="ti ti-brand-google"></i> 連結 Google 帳號';
+}
+
+async function disconnectGoogleAccount() {
+  if (!confirm('確定要斷開 Google 帳號連結？')) return;
+  try {
+    await fetch(`${API_BASE}/api/auth/logout`, { method: 'POST' });
+    showStatus('google-auth-status', 'info', '已斷開連結');
+    updateAuthUI({ authenticated: false, email: null });
+  } catch (e) {
+    showStatus('google-auth-status', 'error', '斷開失敗，請再試');
+  }
+}
+
+// ── 驗證 GA4 ──────────────────────────────
+async function validateGA4() {
+  const propId = document.getElementById('ga4-property-id').value.trim();
+  if (!propId) { showStatus('ga4-status','error','請輸入 GA4 Property ID（格式：properties/123456789 或 G-XXXXXXXXXX）'); return; }
+
+  const btn = document.getElementById('btn-validate-ga4');
+  btn.classList.add('loading');
+  btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> 驗證中...';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/settings/validate-ga4`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ property_id: propId })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showStatus('ga4-status', 'success', `✓ GA4 連線成功！已連接到 ${data.property_name || propId}`);
+      document.getElementById('badge-ga4').textContent = '✓ 已完成';
+      document.getElementById('badge-ga4').className = 'badge badge-green';
+    } else {
+      showStatus('ga4-status', 'error', data.detail || '連線失敗，請確認資訊是否正確');
+    }
+  } catch (e) {
+    showStatus('ga4-status', 'error', '無法連接到後端伺服器，請確認 FastAPI 已啟動');
+  }
+
+  btn.classList.remove('loading');
+  btn.innerHTML = '<i class="ti ti-plug" aria-hidden="true"></i> 驗證 GA4 連線';
 }
 
 // ── 檔案上傳處理 ─────────────────────────────
