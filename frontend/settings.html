@@ -710,41 +710,6 @@ function handleJsonInput(id) {
   }
 }
 
-// ── 驗證 GA4 ─────────────────────────────────
-async function validateGA4() {
-  const propId  = document.getElementById('ga4-property-id').value.trim();
-  const jsonStr = document.getElementById('ga4-json').value.trim();
-
-  if (!propId) { showStatus('ga4-status','error','請輸入 GA4 評估 ID（格式：G-XXXXXXXXXX）'); return; }
-  if (!jsonStr) { showStatus('ga4-status','error','請上傳或貼上 Service Account JSON 金鑰'); return; }
-
-  try { JSON.parse(jsonStr); } catch { showStatus('ga4-status','error','JSON 金鑰格式錯誤，請確認內容完整'); return; }
-
-  const btn = document.getElementById('btn-validate-ga4');
-  btn.classList.add('loading');
-  btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> 驗證中...';
-
-  try {
-    const res = await fetch(`${API_BASE}/api/settings/validate-ga4`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ property_id: propId, credentials_json: jsonStr })
-    });
-    const data = await res.json();
-    if (res.ok) {
-      showStatus('ga4-status', 'success', `✓ GA4 連線成功！已連接到 ${data.property_name || propId}`);
-      document.getElementById('badge-ga4').textContent = '✓ 已完成';
-      document.getElementById('badge-ga4').className = 'badge badge-green';
-    } else {
-      showStatus('ga4-status', 'error', data.detail || '連線失敗，請確認資訊是否正確');
-    }
-  } catch (e) {
-    showStatus('ga4-status', 'error', '無法連接到後端伺服器，請確認 FastAPI 是否已啟動（uvicorn main:app --reload --port 8000）');
-  }
-
-  btn.classList.remove('loading');
-  btn.innerHTML = '<i class="ti ti-plug" aria-hidden="true"></i> 驗證 GA4 連線';
-}
 
 // ── 驗證 Search Console ──────────────────────
 async function validateGSC() {
