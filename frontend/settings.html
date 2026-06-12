@@ -299,7 +299,14 @@
           <i class="ti ti-key" aria-hidden="true"></i>
           <input type="text" id="ga4-property-id" placeholder="properties/123456789" autocomplete="off">
         </div>
-        <div class="hint">在 GA4「管理」→「資料串流」→ 點入你的網站 → 查看「計數 ID」（格式：G-XXXXXXXXXX 或 properties/123456）</div>
+        <div class="hint" style="margin-top:8px;line-height:1.6;">
+          <strong>💡 如何取得 GA4 資源 ID (Property ID)：</strong><br>
+          1. 前往 <a href="https://analytics.google.com/" target="_blank" style="color:var(--accent);text-decoration:underline;font-weight:500;">Google Analytics (分析) 後台</a> 登入。<br>
+          2. 點選左下角首頁上方的 <strong>「管理 (⚙️ 齒輪圖示)」</strong>。<br>
+          3. 點選第二欄最上方的 <strong>「資源設定」 (Property settings)</strong>。<br>
+          4. 複製該頁面右上角顯示的 <strong>「資源 ID」 (純數字，例如 <code>382410928</code>)</strong>。<br>
+          <span style="color:#b91c1c; font-weight:500;">⚠️ 注意：請勿填寫 G- 開頭的「評估 ID」，對接 API 需要的是純數字的「資源 ID」。</span>
+        </div>
       </div>
 
       <div id="ga4-status" style="display:none" class="status-msg"></div>
