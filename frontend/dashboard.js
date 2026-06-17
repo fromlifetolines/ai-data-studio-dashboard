@@ -204,6 +204,24 @@ async function updateDashboard(rangeDays) {
 Chart.defaults.font.family = "'Inter', 'Noto Sans TC', system-ui, sans-serif";
 Chart.defaults.color = '#9ca3af';
 
+// Chart.js 3D drop shadow plugin
+const chartShadowPlugin = {
+  id: 'chartShadow',
+  beforeDatasetsDraw(chart, args, options) {
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.08)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 6;
+  },
+  afterDatasetsDraw(chart, args, options) {
+    const ctx = chart.ctx;
+    ctx.restore();
+  }
+};
+Chart.register(chartShadowPlugin);
+
 const CHART_OPTIONS_BASE = {
   responsive: true,
   maintainAspectRatio: false,
@@ -229,11 +247,36 @@ function makeLine(id, datasets, yCallback) {
     CHARTS[id].destroy();
   }
   
+  const ctx = canvas.getContext('2d');
   const labels = currentData.labels || DAYS_14;
+
+  // Enhance datasets with custom gradients and shadows for 3D look
+  const enhancedDatasets = datasets.map(ds => {
+    if (ds.borderColor === '#2563EB') {
+      const gradient = ctx.createLinearGradient(0, 0, 0, 168);
+      gradient.addColorStop(0, 'rgba(37, 99, 235, 0.22)');
+      gradient.addColorStop(1, 'rgba(37, 99, 235, 0.00)');
+      return {
+        ...ds,
+        fill: true,
+        backgroundColor: gradient,
+        borderWidth: 3,
+        pointBackgroundColor: '#2563EB',
+        pointHoverBackgroundColor: '#2563EB',
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 2,
+        pointHoverBorderColor: '#ffffff',
+        pointHoverBorderWidth: 3,
+        pointRadius: 0,
+        pointHoverRadius: 6
+      };
+    }
+    return ds;
+  });
   
   CHARTS[id] = new Chart(canvas, {
     type: 'line',
-    data: { labels: labels, datasets },
+    data: { labels: labels, datasets: enhancedDatasets },
     options: {
       ...CHART_OPTIONS_BASE,
       scales: {
@@ -1236,21 +1279,45 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // 初始載入專案管理
-  await initProfiles();
-
-  // 初始載入數據
-  await updateDashboard(savedRange);
-  // Onboarding shifted to Page 5
-  if (document.getElementById('onb-list')) {
-    buildOnboarding();
+  // 確保無論如何都綁定曝光測評按鈕與對話，防止前面 APIs 失敗阻斷 JS 執行
+  try {
+    initSeoEvaluatorUI();
+  } catch (e) {
+    console.error("Failed to init SEO evaluator UI:", e);
   }
-  initAIChatUI();         // 初始化 AI 對話綁定
-  initSeoEvaluatorUI();   // 確保載入時即綁定曝光測評按鈕
+  
+  try {
+    initAIChatUI();
+  } catch (e) {
+    console.error("Failed to init AI Chat UI:", e);
+  }
+
+  try {
+    await initProfiles();
+  } catch (e) {
+    console.error("Failed to init profiles:", e);
+  }
+
+  try {
+    await updateDashboard(savedRange);
+  } catch (e) {
+    console.error("Failed to update dashboard:", e);
+  }
+
+  if (document.getElementById('onb-list')) {
+    try {
+      buildOnboarding();
+    } catch (e) {
+      console.error("Failed to build onboarding:", e);
+    }
+  }
 
   // 使頁面與關鍵字報表支援點選標頭排序
   makeTableSortable('pages-table');
   makeTableSortable('kw-table');
+  
+  // 啟動 3D 視覺傾斜效果 (Apple 風格反應式互動)
+  init3DTilt();
 });
 
 // 快速篩選頁面表格
@@ -1361,10 +1428,13 @@ function makeTableSortable(tableId) {
 /* ────────────────────────────────────────────
    10. AI SEO 全方位搜尋引擎曝光測評 UI 綁定與邏輯
    ──────────────────────────────────────────── */
-let currentSeoReport = null; // 儲存當前分析結果集
+let currentSeoReport = null; // 儲存當前 analysis 結果集
 let currentSeoTab = 'seo';    // 預設切換子頁籤：'seo', 'geo', 'aeo'
 
 function initSeoEvaluatorUI() {
+  if (window.seoEvaluatorInitialized) return;
+  window.seoEvaluatorInitialized = true;
+
   const btn = document.getElementById('btn-run-seo');
   const toggle = document.getElementById('toggle-competitor');
   const compGrp = document.getElementById('seo-comp-grp');
@@ -1421,6 +1491,38 @@ function initSeoEvaluatorUI() {
       }
     });
   }
+}
+
+/** 3D 視覺傾斜效果 (Apple 風格反應式互動) */
+function init3DTilt() {
+  const cards = document.querySelectorAll('.card, .kpi-card, .seo-score-card');
+  cards.forEach(card => {
+    // 避免重複綁定
+    if (card.dataset.tiltInitialized) return;
+    card.dataset.tiltInitialized = 'true';
+
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+
+      // 計算傾斜角度 (最大 8 度)
+      const rotateX = ((centerY - y) / centerY) * 8;
+      const rotateY = ((x - centerX) / centerX) * 8;
+
+      card.style.transition = 'none'; // 即時跟隨滑鼠，取消過渡
+      card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02) translateZ(15px)`;
+      card.style.boxShadow = '0 25px 50px -12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.7)';
+    });
+
+    card.addEventListener('mouseleave', () => {
+      card.style.transition = 'transform 0.5s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.5s ease';
+      card.style.transform = 'perspective(1200px) rotateX(0deg) rotateY(0deg) translateZ(0)';
+      card.style.boxShadow = '';
+    });
+  });
 }
 
 /** 渲染測評報告 */
