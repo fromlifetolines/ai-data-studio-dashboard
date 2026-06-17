@@ -26,7 +26,7 @@ FRONTEND_PID=$!
 echo ""
 echo "✅ 啟動完成！"
 echo ""
-echo "   Dashboard: http://localhost:8080/frontend/dashboard.html"
+echo "   Dashboard: http://localhost:8080/frontend/index.html"
 echo "   設定頁面:  http://localhost:8080/frontend/settings.html"
 echo "   API 文件:  http://localhost:8000/docs"
 echo ""
