@@ -1246,6 +1246,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     buildOnboarding();
   }
   initAIChatUI();         // 初始化 AI 對話綁定
+  initSeoEvaluatorUI();   // 確保載入時即綁定曝光測評按鈕
 
   // 使頁面與關鍵字報表支援點選標頭排序
   makeTableSortable('pages-table');
