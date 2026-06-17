@@ -350,7 +350,17 @@ def run_full_evaluation(url: str, gemini_key: str = "") -> Dict[str, Any]:
         try:
             ai_advice = call_gemini(prompt, gemini_key, max_tokens=1000)
         except Exception as e:
-            ai_advice = f"AI 優化建議生成失敗：{str(e)}\n\n(但您依然可以點擊下方子項目卡片查看靜態修復指引)"
+            err_msg = str(e)
+            if "429" in err_msg or "quota" in err_msg.lower() or "limit" in err_msg.lower() or "exhausted" in err_msg.lower():
+                ai_advice = (
+                    "⚠️ **AI 建議暫時無法生成**：您目前使用的 Gemini API 金鑰已達到免費版限制（每日最多 20 次調用）。\n\n"
+                    "**建議解決方案**：\n"
+                    "1. 請前往右上角的 **「設定」** 頁面，更換為您的付費版 API 金鑰，或使用其他未超額的免費金鑰。\n"
+                    "2. 由於免費版有每分鐘與每日限制，您可以等待一段時間後再重試。\n\n"
+                    "*(💡 提示：您現在依然可以點擊左側的各個子指標卡片，查看離線狀態下的程式碼優化與修復方案。)*"
+                )
+            else:
+                ai_advice = f"AI 優化建議生成失敗：{err_msg}\n\n(但您依然可以點擊下方子項目卡片查看靜態修復指引)"
     else:
         # 靜態 fallback 建議
         ai_advice = f"""
