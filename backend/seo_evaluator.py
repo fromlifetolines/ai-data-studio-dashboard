@@ -275,9 +275,22 @@ def evaluate_aeo(html: str, url: str) -> Dict[str, Any]:
         scores["paa"] = 8
         details["paa"] = "普通 (覆蓋的使用者搜尋維度較窄，應加入常見的主題分支)"
 
-    # 6. 語意簡明度
-    scores["readability"] = 15
-    details["readability"] = "佳 (段落結構清晰，程式碼無重大嵌套混亂)"
+    # 6. 語意簡明度與易讀性 (Lighthouse Readable)
+    text_content = re.sub(r"<[^>]*>", "", html)
+    text_content = re.sub(r"\s+", "", text_content)
+    sentences = re.split(r"[。！？\.\?!]", text_content)
+    sentences = [s.strip() for s in sentences if len(s.strip()) > 0]
+    avg_sentence_len = sum(len(s) for s in sentences) / max(len(sentences), 1)
+    
+    if avg_sentence_len <= 35:
+        scores["readability"] = 15
+        details["readability"] = f"優良 (平均句長僅 {int(avg_sentence_len)} 字，文筆簡明流暢，易於 AEO 語音及文字摘要提取)"
+    elif avg_sentence_len <= 60:
+        scores["readability"] = 10
+        details["readability"] = f"普通 (平均句長 {int(avg_sentence_len)} 字，包含部分長難句，建議拆分為短句以提升可讀性)"
+    else:
+        scores["readability"] = 5
+        details["readability"] = f"待改善 (平均句長達 {int(avg_sentence_len)} 字，句子過於冗長，AI 語意分析及摘要擷取難度高)"
 
     total = sum(scores.values())
     return {
