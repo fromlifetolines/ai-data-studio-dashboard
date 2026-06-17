@@ -1573,36 +1573,9 @@ function generateLocalSeoReport(url) {
 }
 
 
-/** 3D 視覺傾斜效果 (Apple 風格反應式互動) */
+/** 3D 視覺傾斜效果 (已停用 - 避免卡片扭動影響閱讀與點擊體驗) */
 function init3DTilt() {
-  const cards = document.querySelectorAll('.card:not(.no-tilt), .kpi-card:not(.no-tilt), .seo-score-card:not(.no-tilt)');
-  cards.forEach(card => {
-    // 避免重複綁定
-    if (card.dataset.tiltInitialized) return;
-    card.dataset.tiltInitialized = 'true';
-
-    card.addEventListener('mousemove', (e) => {
-      const rect = card.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
-
-      // 計算傾斜角度 (最大 8 度)
-      const rotateX = ((centerY - y) / centerY) * 8;
-      const rotateY = ((x - centerX) / centerX) * 8;
-
-      card.style.transition = 'none'; // 即時跟隨滑鼠，取消過渡
-      card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02) translateZ(15px)`;
-      card.style.boxShadow = '0 25px 50px -12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.7)';
-    });
-
-    card.addEventListener('mouseleave', () => {
-      card.style.transition = 'transform 0.5s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.5s ease';
-      card.style.transform = 'perspective(1200px) rotateX(0deg) rotateY(0deg) translateZ(0)';
-      card.style.boxShadow = '';
-    });
-  });
+  // 停用 3D 傾斜動畫，卡片保持平穩與靜止
 }
 
 /** 渲染測評報告 */
