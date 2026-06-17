@@ -1575,7 +1575,7 @@ function generateLocalSeoReport(url) {
 
 /** 3D 視覺傾斜效果 (Apple 風格反應式互動) */
 function init3DTilt() {
-  const cards = document.querySelectorAll('.card, .kpi-card, .seo-score-card');
+  const cards = document.querySelectorAll('.card:not(.no-tilt), .kpi-card:not(.no-tilt), .seo-score-card:not(.no-tilt)');
   cards.forEach(card => {
     // 避免重複綁定
     if (card.dataset.tiltInitialized) return;
