@@ -24,7 +24,11 @@ def fetch_html(url: str) -> str:
         url = "https://" + url
 
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 AI-SEO-Scanner/1.0"
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+        "Accept-Language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache"
     }
     try:
         with httpx.Client(timeout=10.0, follow_redirects=True, verify=False) as client:
@@ -35,6 +39,7 @@ def fetch_html(url: str) -> str:
                 return f"Error: Status code {resp.status_code}"
     except Exception as e:
         return f"Error: {str(e)}"
+
 
 def evaluate_seo(html: str, url: str) -> Dict[str, Any]:
     """
