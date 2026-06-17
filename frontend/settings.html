@@ -197,10 +197,26 @@
     <p>完成設定後，Dashboard 將顯示你的真實數據，並由 AI 提供每週行銷建議。<br>整個過程不需要技術背景，約 10 分鐘完成。</p>
   </div>
 
+  <!-- 專案/公司名稱修改 -->
+  <div class="card" style="padding: 16px; margin-bottom: 20px; border: 1px solid var(--border-mid); border-radius: var(--radius-md); background: var(--surface);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div style="flex: 1; min-width: 200px;">
+        <h3 style="font-size: 13px; font-weight: 600; margin: 0 0 4px 0; color: var(--text-primary);">修改目前公司 / 專案名稱</h3>
+        <p style="font-size: 11px; color: var(--text-secondary); margin: 0;">更改此名稱將會同步更新 Dashboard 與報表上的顯示名稱。</p>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center; width: 100%; max-width: 400px;">
+        <input type="text" id="project-rename-input" class="no-icon" placeholder="例如：伯堅股份有限公司" style="flex: 1; height: 36px; padding: 0 10px; border: 1px solid var(--border-mid); border-radius: var(--radius-md); font-size: 12px;">
+        <button class="validate-btn" id="btn-rename-project" style="margin-top: 0; width: auto; height: 36px; padding: 0 16px; white-space: nowrap; border-radius: var(--radius-md);">
+          確認修改
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- 進度步驟 -->
   <div class="progress-steps" id="progress-steps">
-    <div class="progress-step done">
-      <div class="ps-circle"><i class="ti ti-check" style="font-size:12px"></i></div>
+    <div class="progress-step" id="ps-google">
+      <div class="ps-circle">1</div>
       <div class="ps-label">Google</div>
     </div>
     <div class="progress-step" id="ps-gsc">
@@ -292,8 +308,19 @@
 
       <div id="google-auth-status" style="display:none;margin-bottom:12px" class="status-msg"></div>
 
+      <!-- GA4 Property Selector (Dropdown) -->
+      <div class="field" id="ga4-property-select-field" style="display:none">
+        <label for="ga4-property-select">選擇 GA4 資源 (已自動載入) <span style="color:var(--danger)">*</span></label>
+        <div class="input-wrap" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0 12px; display: flex; align-items: center;">
+          <i class="ti ti-list" aria-hidden="true" style="color: var(--text-secondary); margin-right: 8px;"></i>
+          <select id="ga4-property-select" style="flex: 1; border: none; background: transparent; outline: none; font-family: inherit; font-size: 14px; cursor: pointer; height: 38px; color: var(--text-primary);">
+            <option value="">-- 請選擇 GA4 資源 --</option>
+          </select>
+        </div>
+      </div>
+
       <!-- GA4 Property ID -->
-      <div class="field">
+      <div class="field" id="ga4-property-input-field">
         <label for="ga4-property-id">GA4 Property ID <span style="color:var(--danger)">*</span></label>
         <div class="input-wrap">
           <i class="ti ti-key" aria-hidden="true"></i>
@@ -307,6 +334,10 @@
           4. 複製該頁面右上角顯示的 <strong>「資源 ID」 (純數字，例如 <code>382410928</code>)</strong>。<br>
           <span style="color:#b91c1c; font-weight:500;">⚠️ 注意：請勿填寫 G- 開頭的「評估 ID」，對接 API 需要的是純數字的「資源 ID」。</span>
         </div>
+      </div>
+
+      <div style="margin-top: -6px; margin-bottom: 12px; font-size: 12px; display: none;" id="toggle-ga4-mode-wrap">
+        <a href="javascript:void(0)" id="toggle-ga4-input-mode" style="color:var(--accent); text-decoration:underline; font-weight:500;">⌨️ 切換為手動填寫</a>
       </div>
 
       <div id="ga4-status" style="display:none" class="status-msg"></div>
@@ -335,13 +366,29 @@
         <strong>✨ 已自動共用 Google 帳號授權</strong>——上方連結 Google 帳號後，Search Console 不需要再另外設定，直接填入網站網址驗證即可。
       </div>
 
-      <div class="field">
+      <!-- GSC Site Selector (Dropdown) -->
+      <div class="field" id="gsc-site-select-field" style="display:none">
+        <label for="gsc-site-select">選擇 Search Console 網站 (已自動載入) <span style="color:var(--danger)">*</span></label>
+        <div class="input-wrap" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0 12px; display: flex; align-items: center;">
+          <i class="ti ti-list" aria-hidden="true" style="color: var(--text-secondary); margin-right: 8px;"></i>
+          <select id="gsc-site-select" style="flex: 1; border: none; background: transparent; outline: none; font-family: inherit; font-size: 14px; cursor: pointer; height: 38px; color: var(--text-primary);">
+            <option value="">-- 請選擇網站 --</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- GSC Site Input -->
+      <div class="field" id="gsc-site-input-field">
         <label for="gsc-site-url">網站 URL</label>
         <div class="input-wrap">
           <i class="ti ti-world" aria-hidden="true"></i>
           <input type="text" id="gsc-site-url" placeholder="https://yoursite.com">
         </div>
         <div class="hint">與你在 Search Console 驗證的網站 URL 完全一致（注意有沒有 / 結尾）</div>
+      </div>
+
+      <div style="margin-top: -6px; margin-bottom: 12px; font-size: 12px; display: none;" id="toggle-gsc-mode-wrap">
+        <a href="javascript:void(0)" id="toggle-gsc-input-mode" style="color:var(--accent); text-decoration:underline; font-weight:500;">⌨️ 切換為手動填寫</a>
       </div>
 
       <div id="gsc-status" style="display:none;margin-top:10px" class="status-msg"></div>
@@ -487,35 +534,59 @@
     <div class="setup-section-head" onclick="toggleSection('sec-ai')">
       <div class="section-icon" style="background:#F0F9FF"><i class="ti ti-sparkles" style="color:#0284c7" aria-hidden="true"></i></div>
       <div class="section-info">
-        <div class="section-title">AI 洞察引擎</div>
-        <div class="section-sub">填入 OpenAI API Key 以啟用每週行銷建議分析</div>
+        <div class="section-title">AI 洞察引擎 (OpenAI 或 Google Gemini)</div>
+        <div class="section-sub">填入 API Key 以啟用每週行銷建議分析 (推薦使用 Gemini，提供免費額度)</div>
       </div>
       <div class="section-badge"><span class="badge badge-yellow" id="badge-ai">待設定</span></div>
       <i class="ti ti-chevron-down section-chevron" aria-hidden="true"></i>
     </div>
 
     <div class="setup-section-body">
-      <div class="step-instruction">
-        <strong style="font-size:11px;display:block;margin-bottom:6px">📋 如何取得 OpenAI API Key</strong>
-        <ol>
-          <li>前往 <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a></li>
-          <li>點擊「Create new secret key」→ 複製金鑰（格式：sk-xxxx）</li>
-          <li>確認帳號有足夠的 Credits（每次 AI 分析約消耗 $0.001–$0.005）</li>
-        </ol>
-      </div>
-
-      <div class="field">
-        <label for="openai-key">OpenAI API Key</label>
-        <div class="input-wrap">
-          <i class="ti ti-robot" aria-hidden="true"></i>
-          <input type="password" id="openai-key" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxx">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px; flex-wrap: wrap;">
+        
+        <!-- OpenAI Key 說明與輸入 -->
+        <div style="border: 1px solid var(--border-mid); border-radius: var(--radius-md); padding: 14px; background: var(--surface); box-sizing: border-box;">
+          <strong style="font-size:12px; display:block; margin-bottom:8px; color: var(--text-primary);">
+            <i class="ti ti-brand-openai" style="color:#10a37f"></i> OpenAI API Key
+          </strong>
+          <div class="step-instruction" style="margin-top:0; padding: 8px 10px;">
+            <ol style="margin: 0; padding-left: 14px;">
+              <li style="font-size:10px;">前往 <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI API Key 後台</a></li>
+              <li style="font-size:10px;">建立 Key (格式：sk-xxxx) 並儲存</li>
+            </ol>
+          </div>
+          <div class="field" style="margin-bottom:8px; margin-top:8px;">
+            <div class="input-wrap">
+              <i class="ti ti-robot" aria-hidden="true"></i>
+              <input type="password" id="openai-key" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxx" class="no-icon" style="padding-left:10px;">
+            </div>
+          </div>
         </div>
-        <div class="hint">此 Key 僅儲存在你的本機伺服器，不會上傳至任何雲端服務。</div>
+
+        <!-- Gemini Key 說明與輸入 -->
+        <div style="border: 1px solid var(--border-mid); border-radius: var(--radius-md); padding: 14px; background: var(--surface); box-sizing: border-box;">
+          <strong style="font-size:12px; display:block; margin-bottom:8px; color: var(--text-primary);">
+            <i class="ti ti-brand-google" style="color:var(--accent)"></i> Google Gemini API Key (推薦，具免費額度)
+          </strong>
+          <div class="step-instruction" style="margin-top:0; padding: 8px 10px;">
+            <ol style="margin: 0; padding-left: 14px;">
+              <li style="font-size:10px;">前往 <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio 獲取金鑰</a></li>
+              <li style="font-size:10px;">建立免費的 API Key 即可使用</li>
+            </ol>
+          </div>
+          <div class="field" style="margin-bottom:8px; margin-top:8px;">
+            <div class="input-wrap">
+              <i class="ti ti-sparkles" aria-hidden="true"></i>
+              <input type="password" id="gemini-key" placeholder="AIzaSy..." class="no-icon" style="padding-left:10px;">
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <div id="ai-status" style="display:none;margin-top:10px" class="status-msg"></div>
       <button class="validate-btn" onclick="saveAIKey()">
-        <i class="ti ti-check" aria-hidden="true"></i> 儲存 API Key
+        <i class="ti ti-check" aria-hidden="true"></i> 儲存 AI 金鑰設定
       </button>
     </div>
   </div>
@@ -532,6 +603,8 @@
 
 <script>
 const API_BASE = 'http://127.0.0.1:8000';
+let g_oauth_authenticated = false;
+let g_active_profile_id = 'default';
 
 // 頁面載入完成後，自動檢查 Google 帳號授權狀態
 document.addEventListener('DOMContentLoaded', () => {
@@ -574,6 +647,7 @@ function updateAuthUI(data) {
   const badge    = document.getElementById('badge-ga4');
 
   if (data.authenticated && data.email) {
+    g_oauth_authenticated = true;
     avatar.textContent = '✅';
     avatar.style.background = '#dcfce7';
     name.textContent = '已連結 Google 帳號';
@@ -583,6 +657,7 @@ function updateAuthUI(data) {
     badge.textContent = '✓ 已授權';
     badge.className = 'badge badge-green';
   } else {
+    g_oauth_authenticated = false;
     avatar.textContent = '👤';
     avatar.style.background = '#e0e7ff';
     name.textContent = '尚未連結 Google 帳號';
@@ -606,6 +681,7 @@ async function connectGoogleAccount() {
     const data = await res.json();
     if (res.ok && data.success) {
       showStatus('google-auth-status', 'success', `✓ ${data.message}`);
+      g_oauth_authenticated = true;
       updateAuthUI({ authenticated: true, email: data.email });
     } else {
       showStatus('google-auth-status', 'error', data.detail || '授權失敗，請再試');
@@ -623,6 +699,7 @@ async function disconnectGoogleAccount() {
   try {
     await fetch(`${API_BASE}/api/auth/logout`, { method: 'POST' });
     showStatus('google-auth-status', 'info', '已斷開連結');
+    g_oauth_authenticated = false;
     updateAuthUI({ authenticated: false, email: null });
   } catch (e) {
     showStatus('google-auth-status', 'error', '斷開失敗，請再試');
@@ -828,31 +905,65 @@ async function validateMeta() {
 
 // ── 儲存 AI Key ───────────────────────────────
 async function saveAIKey() {
-  const key = document.getElementById('openai-key').value.trim();
-  if (!key || !key.startsWith('sk-')) {
+  const okey = document.getElementById('openai-key').value.trim();
+  const gkey = document.getElementById('gemini-key').value.trim();
+  if (!okey && !gkey) {
+    showStatus('ai-status', 'error', '請至少輸入 OpenAI API Key 或 Gemini API Key 其中一個以進行驗證。');
+    return;
+  }
+  if (okey && !okey.startsWith('sk-')) {
     showStatus('ai-status', 'error', 'OpenAI API Key 格式錯誤，應以 sk- 開頭');
     return;
   }
+
+  const btn = document.querySelector('button[onclick="saveAIKey()"]');
+  btn.disabled = true;
+  btn.classList.add('loading');
+  btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> 正在驗證 AI 金鑰連線…';
+  showStatus('ai-status', 'info', '🔄 正在對接並驗證 AI 伺服器連線狀態……');
+
   try {
+    // 1. 實體進行 AI 金鑰連線驗證
+    const valRes = await fetch(`${API_BASE}/api/settings/validate-ai`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ openai_key: okey || null, gemini_key: gkey || null })
+    });
+    
+    if (!valRes.ok) {
+      const errData = await valRes.json();
+      throw new Error(errData.detail || 'AI 金鑰驗證失敗');
+    }
+    
+    // 2. 驗證成功後，儲存設定
     const res = await fetch(`${API_BASE}/api/settings/save`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ openai_key: key })
+      body: JSON.stringify({ openai_key: okey || '', gemini_key: gkey || '' })
     });
+    
     if (res.ok) {
-      showStatus('ai-status', 'success', '✓ OpenAI API Key 已儲存，AI 洞察功能已啟用');
+      showStatus('ai-status', 'success', '✓ AI 連線與金鑰驗證成功！AI 洞察與顧問服務已啟動。');
       document.getElementById('badge-ai').textContent = '✓ 已完成';
       document.getElementById('badge-ai').className = 'badge badge-green';
+    } else {
+      const errData = await res.json();
+      throw new Error(errData.detail || '儲存設定失敗');
     }
-  } catch {
-    showStatus('ai-status', 'error', '無法連接到後端伺服器，請確認 FastAPI 是否已啟動');
+  } catch (err) {
+    showStatus('ai-status', 'error', `❌ 連線或驗證失敗：${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    btn.innerHTML = '<i class="ti ti-check" aria-hidden="true"></i> 儲存 AI 金鑰設定';
   }
 }
 
 // ── 儲存所有設定 ─────────────────────────────
 async function saveAll() {
   const propId  = document.getElementById('ga4-property-id').value.trim();
-  const jsonStr = document.getElementById('ga4-json').value.trim();
+  const jsonEl  = document.getElementById('ga4-json');
+  const jsonStr = jsonEl ? jsonEl.value.trim() : '';
   const gscUrl  = document.getElementById('gsc-site-url').value.trim();
   
   const gadsId = document.getElementById('gads-customer-id').value.trim();
@@ -865,19 +976,26 @@ async function saveAll() {
   const metaToken = document.getElementById('meta-token').value.trim();
   
   const aiKey   = document.getElementById('openai-key').value.trim();
+  const geminiKey = document.getElementById('gemini-key').value.trim();
 
-  if (!propId || !jsonStr) {
-    alert('請至少完成 GA4 串接（評估 ID + Service Account JSON）後再儲存。');
+  if (!propId) {
+    alert('請輸入 GA4 Property ID！');
+    return;
+  }
+
+  if (!jsonStr && !g_oauth_authenticated) {
+    alert('請至少完成 GA4 串接（上傳 Service Account JSON 或連結 Google 帳號授權）。');
     return;
   }
 
   try {
     const body = {};
-    if (propId && jsonStr)  body.ga4 = { property_id: propId, credentials_json: jsonStr };
+    if (propId)  body.ga4 = { property_id: propId, credentials_json: jsonStr || null };
     if (gscUrl)             body.gsc = { site_url: gscUrl };
     if (gadsId)             body.gads = { customer_id: gadsId, developer_token: gadsDev, client_id: gadsClient, client_secret: gadsSecret, refresh_token: gadsRefresh };
     if (metaId)             body.meta = { account_id: metaId, token: metaToken };
     if (aiKey)              body.openai_key = aiKey;
+    if (geminiKey)          body.gemini_key = geminiKey;
 
     const res = await fetch(`${API_BASE}/api/settings/save`, {
       method: 'POST',
@@ -905,8 +1023,11 @@ document.head.appendChild(style);
 async function loadCurrentSettings() {
   // 1. 重設所有表單欄位與狀態標記以支援專案切換
   document.getElementById('ga4-property-id').value = '';
-  document.getElementById('ga4-json').value = '';
-  document.getElementById('ga4-json').classList.remove('success', 'error');
+  const jsonEl = document.getElementById('ga4-json');
+  if (jsonEl) {
+    jsonEl.value = '';
+    jsonEl.classList.remove('success', 'error');
+  }
   document.getElementById('badge-ga4').textContent = '待完成';
   document.getElementById('badge-ga4').className = 'badge badge-yellow';
   const ga4FilenameEl = document.getElementById('ga4-filename');
@@ -959,6 +1080,7 @@ async function loadCurrentSettings() {
   }
 
   document.getElementById('openai-key').value = '';
+  document.getElementById('gemini-key').value = '';
   document.getElementById('badge-ai').textContent = '待設定';
   document.getElementById('badge-ai').className = 'badge badge-yellow';
   const aiStatusEl = document.getElementById('ai-status');
@@ -972,12 +1094,21 @@ async function loadCurrentSettings() {
     const res = await fetch(`${API_BASE}/api/settings`);
     if (!res.ok) return;
     const s = await res.json();
+    
+    // 解決重新整理後 Google 帳號授權狀態重置為未登入的 UI / 變數問題
+    g_oauth_authenticated = s.credentials_file_exists;
+    updateAuthUI({
+      authenticated: s.credentials_file_exists,
+      email: s.google_email || '已授權的 Google 帳號'
+    });
+
     if (s.ga4_property_id) {
       document.getElementById('ga4-property-id').value = s.ga4_property_id;
     }
     if (s.ga4_configured) {
       document.getElementById('badge-ga4').textContent = '✓ 已完成';
       document.getElementById('badge-ga4').className = 'badge badge-green';
+      showStatus('ga4-status', 'success', `✓ GA4 連線成功！已連接到 properties/${s.ga4_property_id}`);
     }
     if (s.gsc_site_url) {
       document.getElementById('gsc-site-url').value = s.gsc_site_url;
@@ -985,6 +1116,7 @@ async function loadCurrentSettings() {
     if (s.gsc_configured) {
       document.getElementById('badge-gsc').textContent = '✓ 已完成';
       document.getElementById('badge-gsc').className = 'badge badge-green';
+      showStatus('gsc-status', 'success', `✓ Search Console 連線成功！已連接到 ${s.gsc_site_url}`);
     }
     if (s.gads_customer_id) {
       document.getElementById('gads-customer-id').value = s.gads_customer_id;
@@ -997,6 +1129,7 @@ async function loadCurrentSettings() {
         badgeGads.textContent = '✓ 已完成';
         badgeGads.className = 'badge badge-green';
       }
+      showStatus('gads-status', 'success', `✓ Google Ads 連線成功！客戶 ID: ${s.gads_customer_id}`);
     }
     if (s.meta_account_id) {
       document.getElementById('meta-account-id').value = s.meta_account_id;
@@ -1006,13 +1139,199 @@ async function loadCurrentSettings() {
         badgeMeta.textContent = '✓ 已完成';
         badgeMeta.className = 'badge badge-green';
       }
+      showStatus('meta-status', 'success', `✓ Meta Ads 連線成功！帳戶 ID: ${s.meta_account_id}`);
     }
-    if (s.openai_configured) {
+    if (s.gemini_key) {
+      document.getElementById('gemini-key').value = s.gemini_key;
+    }
+    if (s.openai_configured || s.gemini_configured) {
       document.getElementById('badge-ai').textContent = '✓ 已完成';
       document.getElementById('badge-ai').className = 'badge badge-green';
+      showStatus('ai-status', 'success', '✓ AI 連線與金鑰設定成功！');
     }
+
+    // 更新進度步驟 (Stepper) 的顯示狀態
+    updateStepperStatus(s);
+    
+    // 自動載入 Google 資源與網站下拉選單
+    await loadGoogleDropdowns(s);
+
   } catch (err) {
     console.error('Failed to load current settings:', err);
+  }
+}
+
+// ── 新增：自動載入 Google 下拉選單資料 ─────────────────────
+async function loadGoogleDropdowns(settings) {
+  const gscSelectField = document.getElementById('gsc-site-select-field');
+  const gscInputField = document.getElementById('gsc-site-input-field');
+  const gscToggleWrap = document.getElementById('toggle-gsc-mode-wrap');
+  const gscSelect = document.getElementById('gsc-site-select');
+  const gscInput = document.getElementById('gsc-site-url');
+
+  const ga4SelectField = document.getElementById('ga4-property-select-field');
+  const ga4InputField = document.getElementById('ga4-property-input-field');
+  const ga4ToggleWrap = document.getElementById('toggle-ga4-mode-wrap');
+  const ga4Select = document.getElementById('ga4-property-select');
+  const ga4Input = document.getElementById('ga4-property-id');
+
+  if (!settings.credentials_file_exists) {
+    if (gscSelectField) gscSelectField.style.display = 'none';
+    if (gscInputField) gscInputField.style.display = 'block';
+    if (gscToggleWrap) gscToggleWrap.style.display = 'none';
+    
+    if (ga4SelectField) ga4SelectField.style.display = 'none';
+    if (ga4InputField) ga4InputField.style.display = 'block';
+    if (ga4ToggleWrap) ga4ToggleWrap.style.display = 'none';
+    return;
+  }
+
+  // 1. 載入 Search Console 網站清單
+  try {
+    const res = await fetch(`${API_BASE}/api/google/sites`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success && data.sites && data.sites.length > 0) {
+        gscSelect.innerHTML = '<option value="">-- 請選擇您的 Search Console 網站 --</option>' + 
+          data.sites.map(site => `<option value="${site}">${site}</option>`).join('');
+        
+        const currentGsc = gscInput.value.trim();
+        if (currentGsc) {
+          const matched = data.sites.find(s => s === currentGsc || s === currentGsc + '/' || s + '/' === currentGsc);
+          if (matched) {
+            gscSelect.value = matched;
+            gscInput.value = matched;
+            gscSelectField.style.display = 'block';
+            gscInputField.style.display = 'none';
+          } else {
+            gscSelectField.style.display = 'none';
+            gscInputField.style.display = 'block';
+          }
+        } else {
+          gscSelectField.style.display = 'block';
+          gscInputField.style.display = 'none';
+        }
+        gscToggleWrap.style.display = 'block';
+      }
+    }
+  } catch (err) {
+    console.error('Failed to fetch GSC sites:', err);
+  }
+
+  // 2. 載入 GA4 資源清單
+  try {
+    const res = await fetch(`${API_BASE}/api/google/properties`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success && data.properties && data.properties.length > 0) {
+        ga4Select.innerHTML = '<option value="">-- 請選擇您的 GA4 資源 --</option>' + 
+          data.properties.map(p => `<option value="${p.id}">${p.account_name} - ${p.name} (${p.id})</option>`).join('');
+        
+        const currentGa4 = ga4Input.value.trim();
+        const normalizedGa4 = currentGa4.startsWith('properties/') ? currentGa4 : `properties/${currentGa4}`;
+        
+        if (currentGa4) {
+          const matched = data.properties.find(p => p.id === normalizedGa4 || p.id.replace('properties/', '') === currentGa4);
+          if (matched) {
+            ga4Select.value = matched.id;
+            ga4Input.value = matched.id;
+            ga4SelectField.style.display = 'block';
+            ga4InputField.style.display = 'none';
+          } else {
+            ga4SelectField.style.display = 'none';
+            ga4InputField.style.display = 'block';
+          }
+        } else {
+          ga4SelectField.style.display = 'block';
+          ga4InputField.style.display = 'none';
+        }
+        ga4ToggleWrap.style.display = 'block';
+        
+        const apiTip = document.getElementById('ga4-api-disabled-tip');
+        if (apiTip) apiTip.remove();
+      } else if (data.success === false && data.code === 'API_DISABLED') {
+        ga4SelectField.style.display = 'none';
+        ga4InputField.style.display = 'block';
+        ga4ToggleWrap.style.display = 'none';
+        
+        let apiTip = document.getElementById('ga4-api-disabled-tip');
+        if (!apiTip) {
+          apiTip = document.createElement('div');
+          apiTip.id = 'ga4-api-disabled-tip';
+          apiTip.style = 'background: #EFF6FF; border: 1px solid #BFDBFE; color: #1E3A8A; padding: 10px 12px; border-radius: 6px; font-size: 12px; line-height: 1.6; margin-top: 10px;';
+          // Insert after input wrap
+          const targetParent = document.getElementById('ga4-property-input-field');
+          if (targetParent) targetParent.appendChild(apiTip);
+        }
+        apiTip.innerHTML = `💡 <strong>想省去手動複製 ID 的麻煩？</strong><br>
+          只要 <a href="${data.activation_url}" target="_blank" style="color:var(--accent); text-decoration:underline; font-weight:600;">點此啟用 Google Analytics Admin API</a>，重新整理後即可直接在下拉選單中選擇您的專案公司，無須手動尋找輸入！`;
+      }
+    }
+  } catch (err) {
+    console.error('Failed to fetch GA4 properties:', err);
+  }
+}
+
+// 根據各數據源設定狀態動態更新 Stepper 指標
+function updateStepperStatus(s) {
+  // Step 1: Google (GA4)
+  const stepGoogle = document.getElementById('ps-google');
+  if (stepGoogle) {
+    if (s.ga4_configured) {
+      stepGoogle.classList.add('done');
+      stepGoogle.querySelector('.ps-circle').innerHTML = '<i class="ti ti-check" style="font-size:12px"></i>';
+    } else {
+      stepGoogle.classList.remove('done');
+      stepGoogle.querySelector('.ps-circle').innerHTML = '1';
+    }
+  }
+
+  // Step 2: Search Console
+  const stepGsc = document.getElementById('ps-gsc');
+  if (stepGsc) {
+    if (s.gsc_configured) {
+      stepGsc.classList.add('done');
+      stepGsc.querySelector('.ps-circle').innerHTML = '<i class="ti ti-check" style="font-size:12px"></i>';
+    } else {
+      stepGsc.classList.remove('done');
+      stepGsc.querySelector('.ps-circle').innerHTML = '2';
+    }
+  }
+
+  // Step 3: Google Ads
+  const stepGads = document.getElementById('ps-gads');
+  if (stepGads) {
+    if (s.gads_configured) {
+      stepGads.classList.add('done');
+      stepGads.querySelector('.ps-circle').innerHTML = '<i class="ti ti-check" style="font-size:12px"></i>';
+    } else {
+      stepGads.classList.remove('done');
+      stepGads.querySelector('.ps-circle').innerHTML = '3';
+    }
+  }
+
+  // Step 4: Meta Ads
+  const stepMeta = document.getElementById('ps-meta');
+  if (stepMeta) {
+    if (s.meta_configured) {
+      stepMeta.classList.add('done');
+      stepMeta.querySelector('.ps-circle').innerHTML = '<i class="ti ti-check" style="font-size:12px"></i>';
+    } else {
+      stepMeta.classList.remove('done');
+      stepMeta.querySelector('.ps-circle').innerHTML = '4';
+    }
+  }
+
+  // Step 5: AI 分析
+  const stepAi = document.getElementById('ps-ai');
+  if (stepAi) {
+    if (s.openai_configured || s.gemini_configured) {
+      stepAi.classList.add('done');
+      stepAi.querySelector('.ps-circle').innerHTML = '<i class="ti ti-check" style="font-size:12px"></i>';
+    } else {
+      stepAi.classList.remove('done');
+      stepAi.querySelector('.ps-circle').innerHTML = '5';
+    }
   }
 }
 
@@ -1078,6 +1397,35 @@ async function initProfiles() {
     });
   }
   
+  // 重新命名目前專案
+  const renameBtn = document.getElementById('btn-rename-project');
+  if (renameBtn) {
+    renameBtn.addEventListener('click', async () => {
+      const nameInput = document.getElementById('project-rename-input');
+      const name = nameInput.value.trim();
+      if (!name) { alert('請輸入公司 / 專案名稱'); return; }
+      
+      try {
+        const res = await fetch(`${API_BASE}/api/profiles/rename`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ profile_id: g_active_profile_id, name: name })
+        });
+        if (res.ok) {
+          alert('✓ 專案名稱已更新！');
+          await loadProfiles();
+          await loadCurrentSettings();
+        } else {
+          const data = await res.json();
+          alert('修改專案名稱失敗：' + (data.detail || '未知錯誤'));
+        }
+      } catch (e) {
+        console.error('Rename profile failed:', e);
+        alert('無法連接到後端伺服器');
+      }
+    });
+  }
+
   // 載入專案清單
   await loadProfiles();
 }
@@ -1092,15 +1440,20 @@ async function loadProfiles() {
     const res = await fetch(`${API_BASE}/api/profiles`);
     if (!res.ok) throw new Error('API error');
     const data = await res.json();
-    
     const activeId = data.active_profile_id;
     const profiles = data.profiles;
     
+    g_active_profile_id = activeId;
+
     // 找出當前 active 的專案名稱
     const activeProfile = profiles.find(p => p.id === activeId);
-    const activeName = activeProfile ? activeProfile.name : '預設專案 (公司 A)';
+    const activeName = activeProfile ? activeProfile.name : '伯堅股份有限公司';
     if (activeNameEl) activeNameEl.textContent = activeName;
     if (activeTitleNameEl) activeTitleNameEl.textContent = activeName;
+    
+    // 更新重新命名輸入框
+    const renameInput = document.getElementById('project-rename-input');
+    if (renameInput) renameInput.value = activeName;
     
     // 渲染下拉選單列表
     listContainer.innerHTML = profiles.map(p => `
@@ -1137,8 +1490,8 @@ async function loadProfiles() {
     
   } catch (err) {
     console.error('Failed to load profiles:', err);
-    if (activeNameEl) activeNameEl.textContent = '預設專案 (公司 A)';
-    if (activeTitleNameEl) activeTitleNameEl.textContent = '預設專案 (公司 A)';
+    if (activeNameEl) activeNameEl.textContent = '伯堅股份有限公司';
+    if (activeTitleNameEl) activeTitleNameEl.textContent = '伯堅股份有限公司';
   }
 }
 
@@ -1180,8 +1533,61 @@ async function deleteProfile(profileId) {
 document.addEventListener('DOMContentLoaded', async () => {
   await initProfiles();
   await loadCurrentSettings();
-});
-</script>
+
+  // 綁定 Select 改變時自動填入 Input 的事件
+  const gscSelect = document.getElementById('gsc-site-select');
+  const gscInput = document.getElementById('gsc-site-url');
+  if (gscSelect && gscInput) {
+    gscSelect.addEventListener('change', () => {
+      gscInput.value = gscSelect.value;
+    });
+  }
+
+  const ga4Select = document.getElementById('ga4-property-select');
+  const ga4Input = document.getElementById('ga4-property-id');
+  if (ga4Select && ga4Input) {
+    ga4Select.addEventListener('change', () => {
+      ga4Input.value = ga4Select.value;
+    });
+  }
+
+  // 綁定手動/下拉模式切換
+  const toggleGa4 = document.getElementById('toggle-ga4-input-mode');
+  if (toggleGa4) {
+    toggleGa4.addEventListener('click', () => {
+      const selectField = document.getElementById('ga4-property-select-field');
+      const inputField = document.getElementById('ga4-property-input-field');
+      const isSelectVisible = selectField.style.display !== 'none';
+      if (isSelectVisible) {
+        selectField.style.display = 'none';
+        inputField.style.display = 'block';
+        toggleGa4.textContent = '📋 切換為下拉選單';
+      } else {
+        selectField.style.display = 'block';
+        inputField.style.display = 'none';
+        toggleGa4.textContent = '⌨️ 切換為手動填寫';
+      }
+    });
+  }
+
+  const toggleGsc = document.getElementById('toggle-gsc-input-mode');
+  if (toggleGsc) {
+    toggleGsc.addEventListener('click', () => {
+      const selectField = document.getElementById('gsc-site-select-field');
+      const inputField = document.getElementById('gsc-site-input-field');
+      const isSelectVisible = selectField.style.display !== 'none';
+      if (isSelectVisible) {
+        selectField.style.display = 'none';
+        inputField.style.display = 'block';
+        toggleGsc.textContent = '📋 切換為下拉選單';
+      } else {
+        selectField.style.display = 'block';
+        inputField.style.display = 'none';
+        toggleGsc.textContent = '⌨️ 切換為手動填寫';
+      }
+    });
+  }
+});</script>
   <!-- Modal：新增專案 -->
   <div class="modal-bg" id="modal-create-project" onclick="closeOnBg(event,'modal-create-project')" role="dialog" aria-modal="true" aria-labelledby="mcp-title">
     <div class="modal">

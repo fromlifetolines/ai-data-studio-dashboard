@@ -92,7 +92,8 @@ class GSCClient:
             "endDate": self._parse_date(end_date),
             "dimensions": dimensions,
             "rowLimit": row_limit,
-            "searchType": search_type
+            "searchType": search_type,
+            "dataState": "all"
         }
         
         with httpx.Client(timeout=15.0) as client:
@@ -108,7 +109,7 @@ class GSCClient:
     def get_keywords_report(self, start_date: str = "30daysAgo", end_date: str = "today") -> list:
         """取得熱門關鍵字數據，並計算相對於前期的排名趨勢"""
         # 取得當期關鍵字
-        current_rows = self.query_search_analytics(start_date, end_date, ["query"], row_limit=15)
+        current_rows = self.query_search_analytics(start_date, end_date, ["query"], row_limit=50)
         
         # 取得前期關鍵字做比較，用以計算排名變化
         days = self._get_days_diff(start_date, end_date)

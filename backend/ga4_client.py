@@ -67,8 +67,8 @@ class GA4Client:
             property=self.property_id,
             date_ranges=[
                 DateRange(start_date=start_date, end_date=end_date),
-                DateRange(start_date=f"{self._days_ago(start_date)*2}daysAgo",
-                          end_date=f"{self._days_ago(start_date)}daysAgo"),  # 前期比較
+                DateRange(start_date=self._get_previous_date_range(start_date, end_date)[0],
+                          end_date=self._get_previous_date_range(start_date, end_date)[1]),  # 前期比較
             ],
             metrics=[
                 Metric(name="sessions"),
@@ -163,7 +163,7 @@ class GA4Client:
         return result
 
     # ── 熱門頁面 ────────────────────────────────────
-    def get_top_pages(self, start_date: str = "30daysAgo", end_date: str = "today", limit: int = 20) -> list:
+    def get_top_pages(self, start_date: str = "30daysAgo", end_date: str = "today", limit: int = 50) -> list:
         """取得熱門頁面列表，包含瀏覽量、跳出率、停留時間"""
         req = RunReportRequest(
             property=self.property_id,
@@ -279,8 +279,28 @@ class GA4Client:
         return f"{sign}{delta:.1f}%"
 
     @staticmethod
-    def _days_ago(date_str: str) -> int:
-        """從 '30daysAgo' 解析天數，預設 30"""
-        if "daysAgo" in date_str:
-            return int(date_str.replace("daysAgo", ""))
-        return 30
+    def _get_previous_date_range(start_date: str, end_date: str) -> tuple[str, str]:
+        """計算前一期比較的起迄日期，支援 relative 和 absolute 格式"""
+        from datetime import datetime, timedelta
+        
+        def to_date(d_str: str) -> datetime:
+            today = datetime.now()
+            if d_str == "today":
+                return today
+            elif d_str == "yesterday":
+                return today - timedelta(days=1)
+            elif "daysAgo" in d_str:
+                days = int(d_str.replace("daysAgo", ""))
+                return today - timedelta(days=days)
+            else:
+                return datetime.strptime(d_str, "%Y-%m-%d")
+                
+        try:
+            start_dt = to_date(start_date)
+            end_dt = to_date(end_date)
+            delta = end_dt - start_dt
+            prev_end_dt = start_dt - timedelta(days=1)
+            prev_start_dt = prev_end_dt - delta
+            return prev_start_dt.strftime("%Y-%m-%d"), prev_end_dt.strftime("%Y-%m-%d")
+        except Exception:
+            return "60daysAgo", "30daysAgo"

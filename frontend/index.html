@@ -36,18 +36,29 @@
       <button class="tab"    role="tab" aria-selected="false" onclick="goTab(1)">GA4 流量</button>
       <button class="tab"    role="tab" aria-selected="false" onclick="goTab(2)">Search Console</button>
       <button class="tab"    role="tab" aria-selected="false" onclick="goTab(3)">廣告投放</button>
-      <button class="tab"    role="tab" aria-selected="false" onclick="goTab(4)">串接教學</button>
+      <button class="tab"    role="tab" aria-selected="false" onclick="goTab(4)">AI SEO 曝光測評</button>
+      <button class="tab"    role="tab" aria-selected="false" onclick="goTab(5)">串接教學</button>
     </nav>
     <div class="topbar-right">
       <div class="date-picker" role="button" aria-label="選擇日期範圍" tabindex="0" id="date-picker-btn">
         <i class="ti ti-calendar" aria-hidden="true"></i>
         <span id="date-label">最近 30 天</span>
         <i class="ti ti-chevron-down" aria-hidden="true"></i>
-        <div class="date-dropdown" id="date-dropdown">
+        <div class="date-dropdown" id="date-dropdown" style="min-width: 240px; padding: 6px;">
           <div class="date-option" data-range="7">最近 7 天</div>
           <div class="date-option" data-range="14">最近 14 天</div>
           <div class="date-option active" data-range="30">最近 30 天</div>
           <div class="date-option" data-range="90">最近 90 天</div>
+          <div style="height: 1px; background: var(--border); margin: 6px 0;"></div>
+          <div style="padding: 6px 10px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="font-size: 10px; color: var(--text-secondary); font-weight: 500;">自訂日期範圍</div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <input type="date" id="custom-start-date" style="font-family: inherit; font-size: 10px; padding: 4px 6px; border: 1px solid var(--border-mid); border-radius: var(--radius-sm); width: 95px; background: var(--surface); color: var(--text-primary); outline: none;">
+              <span style="font-size: 10px; color: var(--text-secondary);">至</span>
+              <input type="date" id="custom-end-date" style="font-family: inherit; font-size: 10px; padding: 4px 6px; border: 1px solid var(--border-mid); border-radius: var(--radius-sm); width: 95px; background: var(--surface); color: var(--text-primary); outline: none;">
+            </div>
+            <button id="btn-apply-custom-date" style="font-family: inherit; font-size: 10px; padding: 5px; background: var(--accent); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; text-align: center; font-weight: 500; transition: background 0.15s;">確認套用</button>
+          </div>
         </div>
       </div>
       <div class="status-dot" id="status-dot" title="數據連線狀態"></div>
@@ -174,25 +185,25 @@
     <div class="kpi-grid kpi-grid-4">
       <div class="kpi-card" onclick="openModal('modal-metric','工作階段')">
         <div class="kpi-label">工作階段 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
-        <div class="kpi-value">38,241</div>
+        <div class="kpi-value" data-key="sessions">38,241</div>
         <div class="kpi-delta up">↑ +9.4%</div>
         <div class="kpi-bar"><div class="kpi-bar-fill" style="width:74%;background:var(--accent)"></div></div>
       </div>
       <div class="kpi-card" onclick="openModal('modal-metric','不重複用戶')">
         <div class="kpi-label">不重複用戶 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
-        <div class="kpi-value">28,109</div>
+        <div class="kpi-value" data-key="users">28,109</div>
         <div class="kpi-delta up">↑ +5.2%</div>
         <div class="kpi-bar"><div class="kpi-bar-fill" style="width:58%;background:var(--accent)"></div></div>
       </div>
       <div class="kpi-card" onclick="openModal('modal-metric','平均停留時間')">
         <div class="kpi-label">平均停留時間 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
-        <div class="kpi-value">2:34</div>
+        <div class="kpi-value" data-key="avg_duration">2:34</div>
         <div class="kpi-delta dn">↓ −0:12</div>
         <div class="kpi-bar"><div class="kpi-bar-fill" style="width:42%;background:var(--danger)"></div></div>
       </div>
       <div class="kpi-card" onclick="openModal('modal-metric','整體跳出率')">
         <div class="kpi-label">整體跳出率 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
-        <div class="kpi-value">54.2%</div>
+        <div class="kpi-value" data-key="bounce_rate">54.2%</div>
         <div class="kpi-delta flat">— 持平</div>
         <div class="kpi-bar"><div class="kpi-bar-fill" style="width:54%;background:var(--muted)"></div></div>
       </div>
@@ -200,25 +211,25 @@
     <div class="kpi-grid kpi-grid-4">
       <div class="kpi-card" onclick="openModal('modal-metric','新用戶比例')">
         <div class="kpi-label">新用戶比例 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
-        <div class="kpi-value">63.4%</div>
+        <div class="kpi-value" data-key="new_users_ratio">63.4%</div>
         <div class="kpi-delta up">↑ +2.1%</div>
         <div class="kpi-bar"><div class="kpi-bar-fill" style="width:63%;background:var(--accent)"></div></div>
       </div>
       <div class="kpi-card" onclick="openModal('modal-metric','轉換率')">
         <div class="kpi-label">轉換率 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
-        <div class="kpi-value">3.82%</div>
+        <div class="kpi-value" data-key="conversions_rate">3.82%</div>
         <div class="kpi-delta up">↑ +0.4%</div>
         <div class="kpi-bar"><div class="kpi-bar-fill" style="width:38%;background:var(--accent)"></div></div>
       </div>
       <div class="kpi-card" onclick="openModal('modal-metric','每次工作階段頁數')">
         <div class="kpi-label">每次工作階段頁數 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
-        <div class="kpi-value">3.2</div>
+        <div class="kpi-value" data-key="pages_per_sess">3.2</div>
         <div class="kpi-delta flat">— 持平</div>
         <div class="kpi-bar"><div class="kpi-bar-fill" style="width:45%;background:var(--muted)"></div></div>
       </div>
       <div class="kpi-card" onclick="openModal('modal-metric','目標完成次數')">
         <div class="kpi-label">目標完成次數 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
-        <div class="kpi-value">1,462</div>
+        <div class="kpi-value" data-key="conversions">1,462</div>
         <div class="kpi-delta up">↑ +7.8%</div>
         <div class="kpi-bar"><div class="kpi-bar-fill" style="width:52%;background:var(--accent)"></div></div>
       </div>
@@ -248,9 +259,14 @@
     </div>
 
     <div class="card">
-      <div class="card-header">
-        <div class="card-title">所有頁面完整報表</div>
-        <div class="card-sub">點擊任一列查看詳細分析</div>
+      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div class="card-title">所有頁面完整報表</div>
+          <div class="card-sub">點擊任一列查看詳細分析</div>
+        </div>
+        <div style="position:relative; width: 220px;">
+          <input type="text" id="filter-pages" placeholder="🔍 搜尋頁面路徑..." oninput="filterPagesTable()" style="width:100%; padding: 6px 10px; font-size:11px; border: 1.5px solid var(--border-mid); border-radius:var(--radius-md); outline:none; background:var(--surface); color:var(--text-primary);">
+        </div>
       </div>
       <div class="table-wrap">
         <table class="data-table" id="pages-table">
@@ -280,25 +296,25 @@
     <div class="kpi-grid kpi-grid-4">
       <div class="kpi-card" onclick="openModal('modal-metric','搜尋曝光')">
         <div class="kpi-label">搜尋曝光 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
-        <div class="kpi-value">182K</div>
+        <div class="kpi-value" data-key="impressions">182K</div>
         <div class="kpi-delta up">↑ +12%</div>
         <div class="kpi-bar"><div class="kpi-bar-fill" style="width:65%;background:var(--accent)"></div></div>
       </div>
       <div class="kpi-card" onclick="openModal('modal-metric','自然點擊')">
         <div class="kpi-label">自然點擊 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
-        <div class="kpi-value">6,921</div>
+        <div class="kpi-value" data-key="clicks">6,921</div>
         <div class="kpi-delta up">↑ +9%</div>
         <div class="kpi-bar"><div class="kpi-bar-fill" style="width:55%;background:var(--accent)"></div></div>
       </div>
       <div class="kpi-card" onclick="openModal('modal-metric','平均點擊率')">
         <div class="kpi-label">平均點擊率 CTR <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
-        <div class="kpi-value">3.8%</div>
+        <div class="kpi-value" data-key="ctr">3.8%</div>
         <div class="kpi-delta up">↑ +0.3%</div>
         <div class="kpi-bar"><div class="kpi-bar-fill" style="width:38%;background:var(--accent)"></div></div>
       </div>
       <div class="kpi-card" onclick="openModal('modal-metric','平均排名')">
         <div class="kpi-label">平均排名 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
-        <div class="kpi-value">#4.2</div>
+        <div class="kpi-value" data-key="rank">#4.2</div>
         <div class="kpi-delta up">↑ +0.8</div>
         <div class="kpi-bar"><div class="kpi-bar-fill" style="width:72%;background:var(--accent)"></div></div>
       </div>
@@ -327,9 +343,14 @@
     </div>
 
     <div class="card">
-      <div class="card-header">
-        <div class="card-title">關鍵字完整報表</div>
-        <div class="card-sub">點擊查看詳情與 AI 優化建議</div>
+      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div class="card-title">關鍵字完整報表</div>
+          <div class="card-sub">點擊查看詳情與 AI 優化建議</div>
+        </div>
+        <div style="position:relative; width: 220px;">
+          <input type="text" id="filter-keywords" placeholder="🔍 搜尋關鍵字..." oninput="filterKeywordsTable()" style="width:100%; padding: 6px 10px; font-size:11px; border: 1.5px solid var(--border-mid); border-radius:var(--radius-md); outline:none; background:var(--surface); color:var(--text-primary);">
+        </div>
       </div>
       <div class="table-wrap">
         <table class="data-table" id="kw-table">
@@ -359,25 +380,25 @@
     <div class="kpi-grid kpi-grid-4">
       <div class="kpi-card" onclick="openModal('modal-metric','廣告花費')">
         <div class="kpi-label">廣告花費 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
-        <div class="kpi-value">$124,500</div>
+        <div class="kpi-value" data-key="ad_spend">$124,500</div>
         <div class="kpi-delta dn">↑ +12% 花費增加</div>
         <div class="kpi-bar"><div class="kpi-bar-fill" style="width:72%;background:#f59e0b"></div></div>
       </div>
       <div class="kpi-card" onclick="openModal('modal-metric','廣告收益')">
         <div class="kpi-label">廣告收益 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
-        <div class="kpi-value">$450,200</div>
+        <div class="kpi-value" data-key="ad_rev">$450,200</div>
         <div class="kpi-delta up">↑ +8%</div>
         <div class="kpi-bar"><div class="kpi-bar-fill" style="width:80%;background:var(--accent)"></div></div>
       </div>
       <div class="kpi-card" onclick="openModal('modal-metric','整體ROAS')">
         <div class="kpi-label">整體 ROAS <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
-        <div class="kpi-value">3.61×</div>
+        <div class="kpi-value" data-key="roas">3.61×</div>
         <div class="kpi-delta flat">— 持平</div>
         <div class="kpi-bar"><div class="kpi-bar-fill" style="width:55%;background:var(--muted)"></div></div>
       </div>
       <div class="kpi-card" onclick="openModal('modal-metric','轉換次數')">
         <div class="kpi-label">轉換次數 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
-        <div class="kpi-value">1,842</div>
+        <div class="kpi-value" data-key="ad_conv">1,842</div>
         <div class="kpi-delta up">↑ +6.1%</div>
         <div class="kpi-bar"><div class="kpi-bar-fill" style="width:62%;background:var(--accent)"></div></div>
       </div>
@@ -385,19 +406,19 @@
     <div class="kpi-grid kpi-grid-3">
       <div class="kpi-card" onclick="openModal('modal-metric','平均CPC')">
         <div class="kpi-label">平均 CPC <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
-        <div class="kpi-value">$1.84</div>
+        <div class="kpi-value" data-key="ad_cpc">$1.84</div>
         <div class="kpi-delta up">↓ −8% 降低</div>
         <div class="kpi-bar"><div class="kpi-bar-fill" style="width:42%;background:var(--success)"></div></div>
       </div>
       <div class="kpi-card" onclick="openModal('modal-metric','平均CPA')">
         <div class="kpi-label">平均 CPA <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
-        <div class="kpi-value">$67.6</div>
+        <div class="kpi-value" data-key="ad_cpa">$67.6</div>
         <div class="kpi-delta up">↓ −18% 改善</div>
         <div class="kpi-bar"><div class="kpi-bar-fill" style="width:38%;background:var(--success)"></div></div>
       </div>
       <div class="kpi-card" onclick="openModal('modal-metric','廣告印象')">
         <div class="kpi-label">總曝光次數 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
-        <div class="kpi-value">2.61M</div>
+        <div class="kpi-value" data-key="ad_imp">2.61M</div>
         <div class="kpi-delta up">↑ +14%</div>
         <div class="kpi-bar"><div class="kpi-bar-fill" style="width:68%;background:var(--accent)"></div></div>
       </div>
@@ -451,10 +472,154 @@
 
   </main>
 
+  </main>
+
   <!-- ═══════════════════════════════════════════
-       PAGE 4：串接教學
+       PAGE 4：AI SEO 全方位搜尋引擎曝光測評
   ═══════════════════════════════════════════ -->
   <main class="page" id="p4" role="tabpanel">
+    <div class="seo-scanner-box">
+      <!-- 搜尋引擎曝光測評主看板 -->
+      <div class="card" style="margin-bottom: 16px;">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🔍 AI SEO 全方位搜尋引擎曝光測評</div>
+            <div class="card-sub">整合 傳統 SEO、GEO (AI搜尋引用) 與 AEO (回答引擎優化) 三大核心指標，精準量化您的數位影響力。</div>
+          </div>
+        </div>
+        
+        <div class="seo-input-panel">
+          <div class="seo-input-row">
+            <div class="seo-input-grp">
+              <i class="ti ti-world"></i>
+              <input type="text" id="seo-target-url" placeholder="輸入您的網站網址 (例如：https://your-site.com)" />
+            </div>
+            <div class="seo-input-grp competitor-input" id="seo-comp-grp" style="display: none;">
+              <i class="ti ti-git-compare"></i>
+              <input type="text" id="seo-competitor-url" placeholder="輸入對手網站網址" />
+            </div>
+            <button class="btn-primary" id="btn-run-seo" style="height: 38px; flex-shrink: 0;">
+              <i class="ti ti-run"></i> 開始全方位分析
+            </button>
+          </div>
+          <div class="seo-toggle-row">
+            <label class="seo-checkbox-lbl">
+              <input type="checkbox" id="toggle-competitor" />
+              <span>啟用競品對比模式 (同時分析對手網站)</span>
+            </label>
+            <span style="font-size: 11px; color: var(--text-secondary);">
+              * 建議使用 https:// 開頭之完整網址以獲得高精度評測。
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 讀取狀態骨架屏 -->
+      <div class="seo-loading-skeleton" id="seo-loading" style="display: none;">
+        <div class="skeleton-pulse" style="height: 60px; margin-bottom: 12px; border-radius: 6px;"></div>
+        <div class="skeleton-pulse" style="height: 180px; margin-bottom: 12px; border-radius: 6px;"></div>
+        <div class="skeleton-pulse" style="height: 300px; border-radius: 6px;"></div>
+      </div>
+
+      <!-- 分析結果區 (主面板) -->
+      <div class="seo-results-panel" id="seo-results" style="display: none;">
+        
+        <!-- 三大核心評分卡 -->
+        <div class="seo-score-grid">
+          <div class="seo-score-card card-seo" onclick="switchSeoReportTab('seo')">
+            <div class="seo-score-hdr">
+              <span>傳統 SEO 評分</span>
+              <span class="badge badge-green">基礎檢測</span>
+            </div>
+            <div class="seo-score-val" id="score-val-seo">92</div>
+            <div class="seo-score-lbl">Google / Bing 自然搜尋排名優化</div>
+            <div class="seo-score-arrow">點擊查看 6 項指標 ➡️</div>
+          </div>
+          <div class="seo-score-card card-geo" onclick="switchSeoReportTab('geo')">
+            <div class="seo-score-hdr">
+              <span>AI 搜尋 GEO 評分</span>
+              <span class="badge badge-purple">AI 時代核心</span>
+            </div>
+            <div class="seo-score-val" id="score-val-geo">82</div>
+            <div class="seo-score-lbl">ChatGPT / Claude / Perplexity 引用親和度</div>
+            <div class="seo-score-arrow">點擊查看 6 項指標 ➡️</div>
+          </div>
+          <div class="seo-score-card card-aeo" onclick="switchSeoReportTab('aeo')">
+            <div class="seo-score-hdr">
+              <span>AEO 回答引擎評分</span>
+              <span class="badge badge-blue">精選答案</span>
+            </div>
+            <div class="seo-score-val" id="score-val-aeo">76</div>
+            <div class="seo-score-lbl">Google 精選摘要 + AI Overview 命中率</div>
+            <div class="seo-score-arrow">點擊查看 6 項指標 ➡️</div>
+          </div>
+        </div>
+
+        <!-- 競品比較面板 (僅在對比模式顯示) -->
+        <div class="card competitor-comparison-card" id="comp-compare-panel" style="display: none; margin-bottom: 16px;">
+          <div class="card-header"><div class="card-title">📊 雙站搜尋引擎親和度對比</div></div>
+          <div class="comp-compare-grid">
+            <div class="comp-bar-row">
+              <span class="comp-lbl">傳統 SEO 實力</span>
+              <div class="comp-bar-track">
+                <div class="comp-bar-self" id="comp-bar-self-seo" style="width: 50%;">本站 92</div>
+                <div class="comp-bar-enemy" id="comp-bar-enemy-seo" style="width: 50%;">對手 85</div>
+              </div>
+            </div>
+            <div class="comp-bar-row">
+              <span class="comp-lbl">AI 搜尋 GEO 親和度</span>
+              <div class="comp-bar-track">
+                <div class="comp-bar-self" id="comp-bar-self-geo" style="width: 50%;">本站 82</div>
+                <div class="comp-bar-enemy" id="comp-bar-enemy-geo" style="width: 50%;">對手 60</div>
+              </div>
+            </div>
+            <div class="comp-bar-row">
+              <span class="comp-lbl">回答引擎 AEO 擷取率</span>
+              <div class="comp-bar-track">
+                <div class="comp-bar-self" id="comp-bar-self-aeo" style="width: 50%;">本站 76</div>
+                <div class="comp-bar-enemy" id="comp-bar-enemy-aeo" style="width: 50%;">對手 70</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2col">
+          <!-- 核心子項明細表 -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title" id="seo-breakdown-title">傳統 SEO 6 項子指標</div>
+                <div class="card-sub">點擊各子項查看程式碼級優化方案</div>
+              </div>
+            </div>
+            <div class="seo-breakdown-list" id="seo-breakdown-items">
+              <!-- JS 動態插入子項 -->
+            </div>
+          </div>
+
+          <!-- AI 行銷與技術健診建議 -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">💡 曝光測評 AI 專屬優化建議</div>
+                <div class="card-sub">利用您設定的 AI 引擎進行實時 HTML 與文本語意健檢產出</div>
+              </div>
+            </div>
+            <div class="seo-ai-report" id="seo-ai-advice-body">
+              <!-- AI Markdown 內容 -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ═══════════════════════════════════════════
+       PAGE 5：串接教學
+  ═══════════════════════════════════════════ -->
+  <main class="page" id="p5" role="tabpanel">
 
     <div class="notice-bar" role="alert">
       <i class="ti ti-info-circle" aria-hidden="true"></i>
@@ -522,6 +687,33 @@
           <div class="insight-box-label">AI 內容優化建議</div>
           <p class="insight-box-text" id="mkw-ai">分析中...</p>
           <button class="ai-act-btn" id="mkw-ai-btn">取得完整 SEO 建議 ↗</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal：曝光測評指標優化方案詳情 -->
+  <div class="modal-bg" id="modal-seo-detail" onclick="closeOnBg(event,'modal-seo-detail')" role="dialog" aria-modal="true" aria-labelledby="mseo-title">
+    <div class="modal modal-wide">
+      <div class="modal-head">
+        <h2 class="modal-title" id="mseo-title">🔧 指標優化修復方案</h2>
+        <button class="modal-close" onclick="closeModal('modal-seo-detail')" aria-label="關閉">×</button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom: 12px;">
+          <h3 style="font-size: 13px; font-weight: 600; margin-bottom: 4px;">🎯 當前實測現狀</h3>
+          <p class="modal-desc" id="mseo-current-status" style="font-size: 12px; color: var(--text-primary); background: var(--bg); padding: 8px 12px; border-radius: var(--radius-sm); border-left: 3px solid var(--accent);"></p>
+        </div>
+        <div class="insight-box" style="background: #FFFBEB; border-color: #FDE68A; margin-bottom: 12px;">
+          <div class="insight-box-label" style="color: #B45309;"><i class="ti ti-help"></i> 為什麼這項指標極其重要？</div>
+          <p class="insight-box-text" id="mseo-importance" style="color: #78350F; font-size: 12px; line-height: 1.6;"></p>
+        </div>
+        <div>
+          <h3 style="font-size: 13px; font-weight: 600; margin-bottom: 6px;">💻 修復建議與參考代碼</h3>
+          <pre id="mseo-code-block" style="font-family: monospace; font-size: 11px; background: #1E293B; color: #F8FAFC; padding: 12px; border-radius: var(--radius-md); overflow-x: auto; white-space: pre-wrap; word-break: break-all; max-height: 200px;"></pre>
+        </div>
+        <div style="margin-top: 14px; text-align: right;">
+          <button class="btn-primary" onclick="copySeoRefCode()" style="font-size: 11px; padding: 6px 12px; height: auto;">一鍵複製參考代碼</button>
         </div>
       </div>
     </div>
@@ -673,6 +865,6 @@
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- 主邏輯 -->
-  <script src="dashboard.js"></script>
+  <script src="dashboard.js?v=2"></script>
 </body>
 </html>

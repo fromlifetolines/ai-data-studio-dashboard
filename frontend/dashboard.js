@@ -100,11 +100,21 @@ const MOCK = {
 let currentData = MOCK;
 const CHARTS = {};
 
-async function fetchDashboard(rangeDays = 30) {
+async function fetchDashboard(rangeDaysOrCustom = 30) {
   setStatus('loading');
   try {
-    const startDate = `${rangeDays}daysAgo`;
-    const endDate = 'today';
+    let startDate, endDate;
+    if (rangeDaysOrCustom === 'custom') {
+      startDate = document.getElementById('custom-start-date').value;
+      endDate = document.getElementById('custom-end-date').value;
+      if (!startDate || !endDate) {
+        startDate = '30daysAgo';
+        endDate = 'today';
+      }
+    } else {
+      startDate = `${rangeDaysOrCustom}daysAgo`;
+      endDate = 'today';
+    }
     const res = await fetch(`${API_BASE}/api/dashboard?start_date=${startDate}&end_date=${endDate}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const result = await res.json();
@@ -276,14 +286,76 @@ function makeDonut(id, items) {
 
 /** 建立 Page 0 — 總覽 */
 function buildOverview(data) {
+  // 動態更新關鍵字、頁面與管道的資料庫，以確保點擊彈出視窗時能顯示正確且真實的數據
+  if (data.keywords) {
+    data.keywords.forEach(k => {
+      if (!KW_DATA[k.kw]) {
+        KW_DATA[k.kw] = {
+          rank: k.rank,
+          ctr: k.ctr,
+          click: k.click ? k.click.toLocaleString() : '0',
+          ai: `針對關鍵字「${k.kw}」，目前的搜尋排名為 ${k.rank}，點擊率 ${k.ctr}，本週點擊次數為 ${k.click} 次。`
+        };
+      } else {
+        KW_DATA[k.kw].rank = k.rank;
+        KW_DATA[k.kw].ctr = k.ctr;
+        KW_DATA[k.kw].click = k.click ? k.click.toLocaleString() : '0';
+      }
+    });
+  }
+  if (data.pages) {
+    data.pages.forEach(p => {
+      if (!PAGE_DATA[p.path]) {
+        PAGE_DATA[p.path] = {
+          views: p.views ? p.views.toLocaleString() : '0',
+          bounce: p.bounce || '—',
+          time: p.time || '—',
+          ai: `本週頁面 ${p.path} 瀏覽量為 ${p.views}，跳出率為 ${p.bounce}，平均停留時間為 ${p.time}。`
+        };
+      } else {
+        PAGE_DATA[p.path].views = p.views ? p.views.toLocaleString() : '0';
+        PAGE_DATA[p.path].bounce = p.bounce || '—';
+        PAGE_DATA[p.path].time = p.time || '—';
+      }
+    });
+  }
+  if (data.channels) {
+    data.channels.forEach(ch => {
+      if (!CHANNEL_DATA[ch.name]) {
+        CHANNEL_DATA[ch.name] = {
+          roas: ch.roas || '—',
+          cpa: ch.cpa || '—',
+          conv: ch.conv || '—',
+          ai: `渠道 ${ch.name} 的 ROAS 為 ${ch.roas}，每次轉換成本 CPA 為 ${ch.cpa}，本週共完成 ${ch.conv} 次轉換。`
+        };
+      } else {
+        CHANNEL_DATA[ch.name].roas = ch.roas || '—';
+        CHANNEL_DATA[ch.name].cpa = ch.cpa || '—';
+        CHANNEL_DATA[ch.name].conv = ch.conv || '—';
+      }
+    });
+  }
+
   // AI 摘要
   const aiEl = document.getElementById('ai-summary-text');
   if (aiEl) aiEl.innerHTML = data.ai_summary;
 
   // KPI 卡片數值更新（若 API 回傳）
   Object.entries(data.kpis).forEach(([key, d]) => {
-    const el = document.querySelector(`[data-key="${key}"]`);
-    if (el) el.textContent = d.value;
+    document.querySelectorAll(`[data-key="${key}"]`).forEach(el => {
+      el.textContent = d.value;
+      const deltaEl = el.parentElement.querySelector('.kpi-delta');
+      if (deltaEl && d.delta !== undefined) {
+        if (d.delta === '—' || d.delta === '') {
+          deltaEl.textContent = '—';
+          deltaEl.className = 'kpi-delta flat';
+        } else {
+          const arrow = d.trend === 'up' ? '↑' : d.trend === 'down' ? '↓' : '';
+          deltaEl.textContent = `${arrow} ${d.delta} 較上期`;
+          deltaEl.className = `kpi-delta ${d.trend === 'up' ? 'up' : d.trend === 'down' ? 'dn' : 'flat'}`;
+        }
+      }
+    });
   });
 
   // 工作階段趨勢
@@ -517,7 +589,7 @@ function buildOnboarding() {
   // 串接資料源 Modal 清單
   const clist = document.getElementById('connect-list');
   if (clist) clist.innerHTML = ONB_DATA.map(o => `
-    <div class="onb-card" onclick="closeModal('modal-connect');goTab(4);openModal('modal-onb','${o.id}')">
+    <div class="onb-card" onclick="closeModal('modal-connect');goTab(5);openModal('modal-onb','${o.id}')">
       <div class="onb-icon" style="background:${o.icon_bg}">
         <i class="ti ${o.icon}" style="color:${o.icon_color};font-size:18px" aria-hidden="true"></i>
       </div>
@@ -620,7 +692,7 @@ const FAQ_DATA = [
 /* ────────────────────────────────────────────
    7. 頁籤切換
 ──────────────────────────────────────────── */
-const BUILT = { p1: false, p2: false, p3: false, p4: false };
+const BUILT = { p1: false, p2: false, p3: false, p4: false, p5: false };
 
 function goTab(idx) {
   document.querySelectorAll('.tab').forEach((t, i) => {
@@ -632,7 +704,8 @@ function goTab(idx) {
   if (idx === 1 && !BUILT.p1) { buildGA4(currentData); BUILT.p1 = true; }
   if (idx === 2 && !BUILT.p2) { buildSC(currentData);  BUILT.p2 = true; }
   if (idx === 3 && !BUILT.p3) { buildAds(currentData); BUILT.p3 = true; }
-  if (idx === 4 && !BUILT.p4) { buildOnboarding(); BUILT.p4 = true; }
+  if (idx === 4 && !BUILT.p4) { initSeoEvaluatorUI(); BUILT.p4 = true; }
+  if (idx === 5 && !BUILT.p5) { buildOnboarding(); BUILT.p5 = true; }
 }
 
 /* ────────────────────────────────────────────
@@ -845,7 +918,7 @@ async function loadProfiles() {
     
     // 找出當前 active 的專案名稱
     const activeProfile = profiles.find(p => p.id === activeId);
-    const activeName = activeProfile ? activeProfile.name : '預設專案 (公司 A)';
+    const activeName = activeProfile ? activeProfile.name : '伯堅股份有限公司';
     if (activeNameEl) activeNameEl.textContent = activeName;
     if (activeTitleNameEl) activeTitleNameEl.textContent = activeName;
     
@@ -884,8 +957,8 @@ async function loadProfiles() {
     
   } catch (err) {
     console.error('Failed to load profiles:', err);
-    if (activeNameEl) activeNameEl.textContent = '預設專案 (公司 A)';
-    if (activeTitleNameEl) activeTitleNameEl.textContent = '預設專案 (公司 A)';
+    if (activeNameEl) activeNameEl.textContent = '伯堅股份有限公司';
+    if (activeTitleNameEl) activeTitleNameEl.textContent = '伯堅股份有限公司';
   }
 }
 
@@ -988,7 +1061,14 @@ async function sendPrompt(promptText) {
     const indicator = document.getElementById('chat-typing-indicator');
     if (indicator) indicator.remove();
 
-    if (!res.ok) throw new Error('API error');
+    if (!res.ok) {
+      let detail = 'API error';
+      try {
+        const errorData = await res.json();
+        detail = errorData.detail || detail;
+      } catch (e) {}
+      throw new Error(detail);
+    }
     
     const data = await res.json();
     const reply = data.reply;
@@ -1008,7 +1088,7 @@ async function sendPrompt(promptText) {
     const errMsgEl = document.createElement('div');
     errMsgEl.className = 'chat-msg assistant';
     errMsgEl.style.borderColor = 'var(--danger)';
-    errMsgEl.innerHTML = '<strong>❌ 錯誤：</strong>無法連接到後端 AI 伺服器，請確認 FastAPI 是否已正常啟動。';
+    errMsgEl.innerHTML = `<strong>❌ 錯誤：</strong>${err.message}`;
     messagesList.appendChild(errMsgEl);
   } finally {
     // 恢復輸入與發送按鈕
@@ -1071,14 +1151,27 @@ function initAIChatUI() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // 讀取先前儲存的天數
+  // 讀取先前儲存的天數/日期範圍
   const savedRange = localStorage.getItem('dashboard_date_range') || '30';
-  
+  const customStart = localStorage.getItem('dashboard_custom_start') || '';
+  const customEnd = localStorage.getItem('dashboard_custom_end') || '';
+
   // 更新 UI 上的選取狀態
   const dateLabel = document.getElementById('date-label');
+  const startInput = document.getElementById('custom-start-date');
+  const endInput = document.getElementById('custom-end-date');
+
+  if (startInput) startInput.value = customStart;
+  if (endInput) endInput.value = customEnd;
+
   if (dateLabel) {
-    dateLabel.textContent = `最近 ${savedRange} 天`;
+    if (savedRange === 'custom') {
+      dateLabel.textContent = `${customStart} 至 ${customEnd}`;
+    } else {
+      dateLabel.textContent = `最近 ${savedRange} 天`;
+    }
   }
+
   document.querySelectorAll('.date-option').forEach(opt => {
     opt.classList.toggle('active', opt.getAttribute('data-range') === savedRange);
   });
@@ -1091,9 +1184,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       e.stopPropagation();
       dateDropdown.classList.toggle('show');
     });
+    
+    // 點擊下拉選單內部不關閉選單 (讓自訂日期輸入框能正常點擊)
+    dateDropdown.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
     document.addEventListener('click', () => {
       dateDropdown.classList.remove('show');
     });
+
+    // 天數選項點擊事件
     document.querySelectorAll('.date-option').forEach(opt => {
       opt.addEventListener('click', async (e) => {
         e.stopPropagation();
@@ -1108,6 +1209,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         await updateDashboard(range);
       });
     });
+
+    // 自訂日期「套用」按鈕點擊事件
+    const applyBtn = document.getElementById('btn-apply-custom-date');
+    if (applyBtn) {
+      applyBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const startVal = startInput.value;
+        const endVal = endInput.value;
+        if (!startVal || !endVal) {
+          alert('請選擇完整的開始與結束日期');
+          return;
+        }
+        
+        localStorage.setItem('dashboard_date_range', 'custom');
+        localStorage.setItem('dashboard_custom_start', startVal);
+        localStorage.setItem('dashboard_custom_end', endVal);
+
+        document.querySelectorAll('.date-option').forEach(o => o.classList.remove('active'));
+        if (dateLabel) {
+          dateLabel.textContent = `${startVal} 至 ${endVal}`;
+        }
+        dateDropdown.classList.remove('show');
+        await updateDashboard('custom');
+      });
+    }
   }
 
   // 初始載入專案管理
@@ -1115,6 +1241,338 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 初始載入數據
   await updateDashboard(savedRange);
-  buildOnboarding();      // Page 4 的靜態內容可以直接建立
+  // Onboarding shifted to Page 5
+  if (document.getElementById('onb-list')) {
+    buildOnboarding();
+  }
   initAIChatUI();         // 初始化 AI 對話綁定
+
+  // 使頁面與關鍵字報表支援點選標頭排序
+  makeTableSortable('pages-table');
+  makeTableSortable('kw-table');
 });
+
+// 快速篩選頁面表格
+function filterPagesTable() {
+  const query = document.getElementById('filter-pages').value.toLowerCase();
+  const rows = document.querySelectorAll('#pages-tbody tr');
+  rows.forEach(row => {
+    const pagePath = row.cells[0].textContent.toLowerCase();
+    if (pagePath.includes(query)) {
+      row.style.display = '';
+    } else {
+      row.style.display = 'none';
+    }
+  });
+}
+
+// 快速篩選關鍵字表格
+function filterKeywordsTable() {
+  const query = document.getElementById('filter-keywords').value.toLowerCase();
+  const rows = document.querySelectorAll('#kw-tbody tr');
+  rows.forEach(row => {
+    const keyword = row.cells[0].textContent.toLowerCase();
+    if (keyword.includes(query)) {
+      row.style.display = '';
+    } else {
+      row.style.display = 'none';
+    }
+  });
+}
+
+// 點擊表頭進行升降冪排序的通用邏輯
+function makeTableSortable(tableId) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const headers = table.querySelectorAll('thead th');
+  let currentSortCol = -1;
+  let isAsc = true;
+
+  headers.forEach((header, index) => {
+    // 增加滑鼠指標手勢與禁止文字圈選
+    header.style.cursor = 'pointer';
+    header.style.userSelect = 'none';
+    
+    // 在 CSS 的 hover 狀態下加亮（動態加入樣式）
+    header.title = '點擊可對此欄位進行排序';
+
+    header.addEventListener('click', () => {
+      const tbody = table.querySelector('tbody');
+      if (!tbody) return;
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      if (rows.length === 0) return;
+      
+      // 切換排序方向
+      if (currentSortCol === index) {
+        isAsc = !isAsc;
+      } else {
+        isAsc = true;
+        currentSortCol = index;
+      }
+
+      // 清除其他欄位的排序箭頭標記
+      headers.forEach(h => {
+        h.textContent = h.textContent.replace(/ [▲▼]/g, '');
+      });
+
+      // 加上目前排序箭頭
+      header.textContent = header.textContent + (isAsc ? ' ▲' : ' ▼');
+
+      // 進行資料排序
+      rows.sort((rowA, rowB) => {
+        const cellA = rowA.cells[index].textContent.trim();
+        const cellB = rowB.cells[index].textContent.trim();
+
+        // 解析特殊欄位數值（如帶有 %、#、千分逗號、或分秒 3:12 等時間格式）
+        const parseVal = (str) => {
+          if (!str || str === '—') return -999999;
+          
+          // 如果是時間格式 (例如 "3:12" 或 "1:05")
+          if (str.includes(':')) {
+            const parts = str.split(':');
+            return parts.reduce((acc, time) => (60 * acc) + parseFloat(time), 0);
+          }
+          
+          // 移除所有非數字、小數點與負號的字元
+          let clean = str.replace(/[^0-9.\-]/g, '');
+          const parsed = parseFloat(clean);
+          return isNaN(parsed) ? str.toLowerCase() : parsed;
+        };
+
+        const valA = parseVal(cellA);
+        const valB = parseVal(cellB);
+
+        if (typeof valA === 'number' && typeof valB === 'number') {
+          return isAsc ? valA - valB : valB - valA;
+        } else {
+          return isAsc 
+            ? String(valA).localeCompare(String(valB)) 
+            : String(valB).localeCompare(String(valA));
+        }
+      });
+
+      // 重新依排序後的順序渲染 Rows
+      rows.forEach(row => tbody.appendChild(row));
+    });
+  });
+}
+
+/* ────────────────────────────────────────────
+   10. AI SEO 全方位搜尋引擎曝光測評 UI 綁定與邏輯
+   ──────────────────────────────────────────── */
+let currentSeoReport = null; // 儲存當前分析結果集
+let currentSeoTab = 'seo';    // 預設切換子頁籤：'seo', 'geo', 'aeo'
+
+function initSeoEvaluatorUI() {
+  const btn = document.getElementById('btn-run-seo');
+  const toggle = document.getElementById('toggle-competitor');
+  const compGrp = document.getElementById('seo-comp-grp');
+
+  if (toggle) {
+    toggle.addEventListener('change', () => {
+      if (compGrp) {
+        compGrp.style.display = toggle.checked ? 'flex' : 'none';
+      }
+    });
+  }
+
+  if (btn) {
+    btn.addEventListener('click', async () => {
+      const url = document.getElementById('seo-target-url').value.trim();
+      const competitorUrl = document.getElementById('seo-competitor-url').value.trim();
+      const isCompEnabled = toggle ? toggle.checked : false;
+
+      if (!url) {
+        alert('請先輸入要分析的網站網址！');
+        return;
+      }
+
+      // 顯示 loading 骨架屏，隱藏前一次的報告
+      document.getElementById('seo-loading').style.display = 'block';
+      document.getElementById('seo-results').style.display = 'none';
+
+      try {
+        const payload = { url: url };
+        if (isCompEnabled && competitorUrl) {
+          payload.competitor_url = competitorUrl;
+        }
+
+        const res = await fetch(`${API_BASE}/api/seo/evaluate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.detail || '評測伺服器連線失敗');
+        }
+
+        const data = await res.json();
+        currentSeoReport = data;
+        renderSeoReport(data);
+
+      } catch (err) {
+        alert(`評測失敗：${err.message}`);
+        console.error(err);
+      } finally {
+        document.getElementById('seo-loading').style.display = 'none';
+      }
+    });
+  }
+}
+
+/** 渲染測評報告 */
+function renderSeoReport(data) {
+  const primary = data.primary;
+  const competitor = data.competitor;
+
+  // 1. 填入大分數
+  document.getElementById('score-val-seo').textContent = primary.scores.seo;
+  document.getElementById('score-val-geo').textContent = primary.scores.geo;
+  document.getElementById('score-val-aeo').textContent = primary.scores.aeo;
+
+  // 2. 處理競品對比顯示
+  const compPanel = document.getElementById('comp-compare-panel');
+  if (competitor) {
+    compPanel.style.display = 'block';
+    
+    // 計算長度比例 (本站 vs 對手)
+    const setBarWidth = (selfId, enemyId, selfVal, enemyVal) => {
+      const selfEl = document.getElementById(selfId);
+      const enemyEl = document.getElementById(enemyId);
+      const sum = selfVal + enemyVal;
+      if (sum === 0) {
+        selfEl.style.width = '50%';
+        enemyEl.style.width = '50%';
+      } else {
+        const selfPct = (selfVal / sum) * 100;
+        selfEl.style.width = `${selfPct}%`;
+        selfEl.textContent = `本站 ${selfVal}`;
+        enemyEl.style.width = `${100 - selfPct}%`;
+        enemyEl.textContent = `對手 ${enemyVal}`;
+      }
+    };
+    
+    setBarWidth('comp-bar-self-seo', 'comp-bar-enemy-seo', primary.scores.seo, competitor.scores.seo);
+    setBarWidth('comp-bar-self-geo', 'comp-bar-enemy-geo', primary.scores.geo, competitor.scores.geo);
+    setBarWidth('comp-bar-self-aeo', 'comp-bar-enemy-aeo', primary.scores.aeo, competitor.scores.aeo);
+  } else {
+    compPanel.style.display = 'none';
+  }
+
+  // 3. 渲染 AI 建議 (轉換 Markdown 到 HTML 行為)
+  const adviceBody = document.getElementById('seo-ai-advice-body');
+  if (adviceBody) {
+    adviceBody.innerHTML = formatMarkdown(primary.ai_advice);
+  }
+
+  // 4. 預設顯示當前 Tab 內容
+  switchSeoReportTab(currentSeoTab);
+
+  // 5. 顯現結果面板
+  document.getElementById('seo-results').style.display = 'block';
+}
+
+/** 切換展示子項明細 Tab ('seo', 'geo', 'aeo') */
+function switchSeoReportTab(tabName) {
+  currentSeoTab = tabName;
+  if (!currentSeoReport) return;
+
+  const primary = currentSeoReport.primary;
+  let listItems = [];
+  let titleText = "";
+
+  if (tabName === 'seo') {
+    listItems = primary.seo_report;
+    titleText = "傳統 SEO 6 項子指標";
+  } else if (tabName === 'geo') {
+    listItems = primary.geo_report;
+    titleText = "AI 搜尋 GEO 6 項子指標";
+  } else if (tabName === 'aeo') {
+    listItems = primary.aeo_report;
+    titleText = "回答引擎 AEO 6 項子指標";
+  }
+
+  // 更新小標題
+  document.getElementById('seo-breakdown-title').textContent = titleText;
+
+  // 亮顯點選的 Score Card，暗掉其他
+  document.querySelectorAll('.seo-score-card').forEach(c => c.style.transform = 'none');
+  const selectedCard = document.querySelector(`.card-${tabName}`);
+  if (selectedCard) {
+    selectedCard.style.transform = 'translateY(-4px)';
+  }
+
+  // 渲染列表
+  const el = document.getElementById('seo-breakdown-items');
+  if (el) {
+    el.innerHTML = listItems.map((item, idx) => {
+      const pct = (item.score / item.max) * 100;
+      return `
+        <div class="seo-item-row" onclick="openSeoDetailModal('${tabName}', ${idx})">
+          <div class="seo-item-name">${item.name}</div>
+          <div class="seo-item-score-track">
+            <div class="seo-item-score-fill" style="width: ${pct}%;"></div>
+          </div>
+          <div class="seo-item-score-text">${item.score} / ${item.max}</div>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+/** 打開修復建議 Modal */
+let lastSelectedSeoCode = ""; // 暫存待複製的代碼
+
+function openSeoDetailModal(tabName, idx) {
+  if (!currentSeoReport) return;
+  const report = currentSeoReport.primary;
+  let list = [];
+  if (tabName === 'seo') list = report.seo_report;
+  if (tabName === 'geo') list = report.geo_report;
+  if (tabName === 'aeo') list = report.aeo_report;
+
+  const item = list[idx];
+  if (!item) return;
+
+  document.getElementById('mseo-title').textContent = `🔧 優化方案：${item.name}`;
+  document.getElementById('mseo-current-status').textContent = item.desc;
+  document.getElementById('mseo-importance').textContent = item.importance;
+  
+  const codeBlock = document.getElementById('mseo-code-block');
+  codeBlock.textContent = item.code;
+  lastSelectedSeoCode = item.code;
+
+  openModal('modal-seo-detail');
+}
+
+/** 一鍵複製代碼 */
+function copySeoRefCode() {
+  if (!lastSelectedSeoCode) return;
+  navigator.clipboard.writeText(lastSelectedSeoCode).then(() => {
+    alert('參考代碼已成功複製到剪貼簿！');
+  }).catch(err => {
+    alert('複製失敗，請手動圈選複製。');
+  });
+}
+
+/** 簡易 Markdown 格式化器 */
+function formatMarkdown(md) {
+  if (!md) return "";
+  let html = md;
+  // 處理粗體
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  // 處理小標題
+  html = html.replace(/^### (.*?)$/gm, '<h3>$1</h3>');
+  // 處理列表
+  html = html.replace(/^\s*[-*]\s*(.*?)$/gm, '<li>$1</li>');
+  // 處理 li 外層包裹 (簡單正則替換)
+  html = html.replace(/(<li>.*?<\/li>)/gs, '<ul>$1</ul>');
+  // 移除多餘的連續 ul
+  html = html.replace(/<\/ul>\s*<ul>/g, '');
+  // 處理換行
+  html = html.replace(/\n/g, '<br>');
+  return html;
+}
+
