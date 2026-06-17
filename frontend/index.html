@@ -95,25 +95,37 @@
     <!-- KPI 卡片 -->
     <div class="kpi-grid kpi-grid-4">
       <div class="kpi-card" onclick="goTab(1)" title="點擊查看 GA4 流量詳情">
-        <div class="kpi-label">工作階段 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <div class="kpi-label" style="margin-bottom:0">工作階段</div>
+          <div class="icon-badge-circle violet"><i class="ti ti-chart-line"></i></div>
+        </div>
         <div class="kpi-value" data-key="sessions">38,241</div>
         <div class="kpi-delta up">↑ +9.4% 較上期</div>
         <div class="kpi-bar"><div class="kpi-bar-fill" style="width:74%;background:var(--accent)"></div></div>
       </div>
       <div class="kpi-card" onclick="goTab(1)" title="點擊查看用戶詳情">
-        <div class="kpi-label">不重複用戶 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <div class="kpi-label" style="margin-bottom:0">不重複用戶</div>
+          <div class="icon-badge-circle green"><i class="ti ti-users"></i></div>
+        </div>
         <div class="kpi-value" data-key="users">28,109</div>
         <div class="kpi-delta up">↑ +5.2% 較上期</div>
-        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:58%;background:var(--accent)"></div></div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:58%;background:var(--success)"></div></div>
       </div>
       <div class="kpi-card" onclick="goTab(2)" title="點擊查看 Search Console">
-        <div class="kpi-label">搜尋曝光 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <div class="kpi-label" style="margin-bottom:0">搜尋曝光</div>
+          <div class="icon-badge-circle orange"><i class="ti ti-eye"></i></div>
+        </div>
         <div class="kpi-value" data-key="impressions">182K</div>
         <div class="kpi-delta up">↑ +12% 較上期</div>
-        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:65%;background:var(--accent)"></div></div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:65%;background:var(--warning)"></div></div>
       </div>
       <div class="kpi-card" onclick="goTab(3)" title="點擊查看廣告投放詳情">
-        <div class="kpi-label">整體 ROAS <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <div class="kpi-label" style="margin-bottom:0">整體 ROAS</div>
+          <div class="icon-badge-circle red"><i class="ti ti-currency-dollar"></i></div>
+        </div>
         <div class="kpi-value" data-key="roas">3.61×</div>
         <div class="kpi-delta flat">— 持平</div>
         <div class="kpi-bar"><div class="kpi-bar-fill" style="width:55%;background:var(--muted)"></div></div>
@@ -184,25 +196,37 @@
     <!-- 8 個 KPI -->
     <div class="kpi-grid kpi-grid-4">
       <div class="kpi-card" onclick="openModal('modal-metric','工作階段')">
-        <div class="kpi-label">工作階段 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <div class="kpi-label" style="margin-bottom:0">工作階段</div>
+          <div class="icon-badge-circle violet"><i class="ti ti-chart-line"></i></div>
+        </div>
         <div class="kpi-value" data-key="sessions">38,241</div>
         <div class="kpi-delta up">↑ +9.4%</div>
         <div class="kpi-bar"><div class="kpi-bar-fill" style="width:74%;background:var(--accent)"></div></div>
       </div>
       <div class="kpi-card" onclick="openModal('modal-metric','不重複用戶')">
-        <div class="kpi-label">不重複用戶 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <div class="kpi-label" style="margin-bottom:0">不重複用戶</div>
+          <div class="icon-badge-circle green"><i class="ti ti-users"></i></div>
+        </div>
         <div class="kpi-value" data-key="users">28,109</div>
         <div class="kpi-delta up">↑ +5.2%</div>
-        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:58%;background:var(--accent)"></div></div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:58%;background:var(--success)"></div></div>
       </div>
       <div class="kpi-card" onclick="openModal('modal-metric','平均停留時間')">
-        <div class="kpi-label">平均停留時間 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <div class="kpi-label" style="margin-bottom:0">平均停留時間</div>
+          <div class="icon-badge-circle orange"><i class="ti ti-clock"></i></div>
+        </div>
         <div class="kpi-value" data-key="avg_duration">2:34</div>
         <div class="kpi-delta dn">↓ −0:12</div>
         <div class="kpi-bar"><div class="kpi-bar-fill" style="width:42%;background:var(--danger)"></div></div>
       </div>
       <div class="kpi-card" onclick="openModal('modal-metric','整體跳出率')">
-        <div class="kpi-label">整體跳出率 <i class="ti ti-external-link kpi-link-icon" aria-hidden="true"></i></div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <div class="kpi-label" style="margin-bottom:0">整體跳出率</div>
+          <div class="icon-badge-circle red"><i class="ti ti-arrow-bounce"></i></div>
+        </div>
         <div class="kpi-value" data-key="bounce_rate">54.2%</div>
         <div class="kpi-delta flat">— 持平</div>
         <div class="kpi-bar"><div class="kpi-bar-fill" style="width:54%;background:var(--muted)"></div></div>

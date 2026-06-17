@@ -6,33 +6,33 @@
 /* ── 字體匯入 ── */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap');
 
-/* ── 設計 Token ── */
+/* ── 設計 Token (EduFlow 風格：薰衣草紫 × 活力珊瑚橘) ── */
 :root {
-  --accent:         #2563EB; /* Bright Blue */
-  --accent-light:   #EFF6FF;
-  --accent-mid:     #BFDBFE;
-  --success:        #16A34A;
-  --success-light:  #DCFCE7;
-  --warning:        #D97706;
-  --warning-light:  #FEF9C3;
-  --danger:         #DC2626;
-  --danger-light:   #FEE2E2;
-  --muted:          #9CA3AF;
+  --accent:         #7C3AED; /* Royal Lavender/Violet */
+  --accent-light:   #F5F3FF; /* Light Lavender Mist */
+  --accent-mid:     #DDD6FE; /* Soft Lavender Tint */
+  --success:        #10B981; /* Mint Green */
+  --success-light:  #ECFDF5;
+  --warning:        #F97316; /* Energetic Coral Orange */
+  --warning-light:  #FFF7ED;
+  --danger:         #EF4444; /* Crimson Red */
+  --danger-light:   #FEF2F2;
+  --muted:          #64748B; /* Slate Gray */
 
-  --bg:             #F3F4F6; /* MUJI Light Gray */
-  --surface:        rgba(255, 255, 255, 0.85); /* Premium Glassmorphism */
-  --border:         rgba(0, 0, 0, 0.05);
-  --border-mid:     rgba(0, 0, 0, 0.1);
+  --bg:             #F8FAFC; /* EduFlow Clean Off-White */
+  --surface:        rgba(255, 255, 255, 0.95); /* Translucent White Card */
+  --border:         rgba(226, 232, 240, 0.8);  /* Ultra-Soft Slate Border */
+  --border-mid:     rgba(203, 213, 225, 0.6);
 
-  --text-primary:   #1F2937;
-  --text-secondary: #4B5563;
+  --text-primary:   #1E1B4B; /* Deep Indigo Charcoal */
+  --text-secondary: #64748B; /* Muted Slate Gray */
 
-  --radius-sm:      6px;
-  --radius-md:      10px;
-  --radius-lg:      16px;
-  --radius-xl:      24px;
+  --radius-sm:      8px;
+  --radius-md:      14px;
+  --radius-lg:      20px;
+  --radius-xl:      28px;
 
-  --shadow-card:    0 10px 30px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02), inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
+  --shadow-card:    0 10px 35px rgba(30, 27, 75, 0.025), 0 1px 3px rgba(30, 27, 75, 0.015), inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
 }
 
 /* 3D Depth Card Overlay & Hover Effects */
@@ -56,21 +56,21 @@
   border-color: var(--accent-mid) !important;
 }
 
-/* Apple Liquid Glass Buttons */
+/* Apple Liquid Glass Buttons (EduFlow 紫色漸層款式) */
 .btn-primary, #btn-run-seo {
   display: flex !important;
   align-items: center !important;
   gap: 6px !important;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0) 100%), 
-              linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+              linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
   box-shadow: 
-    0 1px 3px rgba(0, 0, 0, 0.08),
-    0 4px 14px rgba(37, 99, 235, 0.25),
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    0 4px 14px rgba(124, 58, 237, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.45),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.08) !important;
+    inset 0 -1px 2px rgba(0, 0, 0, 0.05) !important;
   color: #fff !important;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
   transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1) !important;
   border-radius: 30px !important; /* Pill style */
   font-weight: 600 !important;
@@ -84,19 +84,19 @@
 
 .btn-primary:hover, #btn-run-seo:hover {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 100%),
-              linear-gradient(135deg, #60a5fa 0%, #2563eb 100%) !important;
+              linear-gradient(135deg, #c084fc 0%, #8b5cf6 100%) !important;
   transform: translateY(-2px) scale(1.02) !important;
   box-shadow: 
-    0 2px 5px rgba(0, 0, 0, 0.12),
-    0 8px 24px rgba(37, 99, 235, 0.35),
+    0 2px 5px rgba(0, 0, 0, 0.08),
+    0 8px 24px rgba(124, 58, 237, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
 }
 
 .btn-primary:active, #btn-run-seo:active {
   transform: translateY(1px) scale(0.98) !important;
   box-shadow: 
-    0 1px 2px rgba(0, 0, 0, 0.08),
-    0 2px 8px rgba(37, 99, 235, 0.2),
+    0 1px 2px rgba(0, 0, 0, 0.05),
+    0 2px 8px rgba(124, 58, 237, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
 }
 
@@ -670,30 +670,44 @@ canvas { display: block; }
 .table-wrap { overflow-x: auto; }
 .data-table {
   width: 100%;
-  border-collapse: collapse;
-  font-size: 11px;
+  border-collapse: separate;
+  border-spacing: 0 4px; /* Space out rows like cards */
+  font-size: 12px;
 }
 .data-table th {
   text-align: left;
-  font-size: 10px;
-  font-weight: 500;
+  font-size: 11px;
+  font-weight: 600;
   color: var(--text-secondary);
-  padding: 0 0 8px;
-  border-bottom: 1px solid var(--border);
-  letter-spacing: 0.03em;
+  padding: 8px 12px;
+  border-bottom: 2px solid var(--border);
+  letter-spacing: 0.05em;
   white-space: nowrap;
 }
 .data-table th.num { text-align: right; }
 .data-table td {
-  padding: 8px 0;
-  border-bottom: 1px solid #f9f9f9;
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
   vertical-align: middle;
   white-space: nowrap;
+  transition: all 0.2s ease;
 }
 .data-table td.num { text-align: right; }
-.data-table tbody tr { cursor: pointer; transition: background 0.1s; }
-.data-table tbody tr:last-child td { border-bottom: none; }
-.data-table tbody tr:hover td { background: var(--accent-light); }
+.data-table tbody tr { 
+  cursor: pointer; 
+  transition: all 0.25s ease;
+}
+.data-table tbody tr:hover td { 
+  background: var(--accent-light); 
+}
+.data-table tbody tr:hover td:first-child {
+  border-top-left-radius: var(--radius-sm);
+  border-bottom-left-radius: var(--radius-sm);
+}
+.data-table tbody tr:hover td:last-child {
+  border-top-right-radius: var(--radius-sm);
+  border-bottom-right-radius: var(--radius-sm);
+}
 
 /* ── Badges ── */
 .badge {
@@ -1320,5 +1334,35 @@ canvas { display: block; }
 @keyframes loading-pulse {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+/* Circular Icon Badges for EduFlow Wireframe */
+.icon-badge-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 12px;
+  flex-shrink: 0;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+.icon-badge-circle.violet {
+  background: #ECE9FD;
+  color: #7C3AED;
+}
+.icon-badge-circle.orange {
+  background: #FFF0E6;
+  color: #F97316;
+}
+.icon-badge-circle.green {
+  background: #E6F9F0;
+  color: #10B981;
+}
+.icon-badge-circle.red {
+  background: #FEE2E2;
+  color: #EF4444;
 }
 

@@ -35,14 +35,14 @@ const MOCK = {
   new_users_trend:[1100,1300,1200,1500,1600,1900,1750,1500,1750,1900,2000,1950,2100,2200],
 
   traffic_source: [
-    { label:'自然搜尋', value:61, color:'#2563EB' },
+    { label:'自然搜尋', value:61, color:'#7C3AED' },
     { label:'直接流量', value:18, color:'#6b7280' },
     { label:'社群媒體', value:12, color:'#93c5fd' },
     { label:'其他',     value: 9, color:'#e5e7eb' },
   ],
 
   device: [
-    { label:'手機', value:58, color:'#2563EB' },
+    { label:'手機', value:58, color:'#7C3AED' },
     { label:'桌機', value:34, color:'#6b7280' },
     { label:'平板', value: 8, color:'#d1d5db' },
   ],
@@ -70,7 +70,7 @@ const MOCK = {
   ssc_click: [420,490,460,530,550,590,570,510,570,620,660,640,690,692],
 
   search_type: [
-    { label:'網頁', value:83, color:'#2563EB' },
+    { label:'網頁', value:83, color:'#7C3AED' },
     { label:'圖片', value:10, color:'#6b7280' },
     { label:'影片', value: 7, color:'#d1d5db' },
   ],
@@ -88,7 +88,7 @@ const MOCK = {
   ad_spend:   [7.5,8,8,9,10,11,9.5,8.8,10,12,13,12,13,14],
 
   budget: [
-    { label:'Google', value:55, color:'#2563EB' },
+    { label:'Google', value:55, color:'#7C3AED' },
     { label:'Meta',   value:34, color:'#6b7280' },
     { label:'YouTube',value:11, color:'#d1d5db' },
   ],
@@ -252,17 +252,18 @@ function makeLine(id, datasets, yCallback) {
 
   // Enhance datasets with custom gradients and shadows for 3D look
   const enhancedDatasets = datasets.map(ds => {
-    if (ds.borderColor === '#2563EB') {
+    if (ds.borderColor === '#7C3AED' || ds.borderColor === '#2563EB') {
       const gradient = ctx.createLinearGradient(0, 0, 0, 168);
-      gradient.addColorStop(0, 'rgba(37, 99, 235, 0.22)');
-      gradient.addColorStop(1, 'rgba(37, 99, 235, 0.00)');
+      gradient.addColorStop(0, 'rgba(124, 58, 237, 0.22)');
+      gradient.addColorStop(1, 'rgba(124, 58, 237, 0.00)');
       return {
         ...ds,
         fill: true,
         backgroundColor: gradient,
+        borderColor: '#7C3AED',
         borderWidth: 3,
-        pointBackgroundColor: '#2563EB',
-        pointHoverBackgroundColor: '#2563EB',
+        pointBackgroundColor: '#7C3AED',
+        pointHoverBackgroundColor: '#7C3AED',
         pointBorderColor: '#ffffff',
         pointBorderWidth: 2,
         pointHoverBorderColor: '#ffffff',
@@ -403,7 +404,7 @@ function buildOverview(data) {
 
   // 工作階段趨勢
   makeLine('c-sess', [
-    { data: data.sessions_trend, borderColor: '#2563EB', borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true, backgroundColor: 'rgba(37,99,235,0.05)' },
+    { data: data.sessions_trend, borderColor: '#7C3AED', borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true, backgroundColor: 'rgba(124,58,237,0.05)' },
     { data: data.users_trend,    borderColor: '#d1d5db', borderWidth: 1.5, pointRadius: 0, tension: 0.4, borderDash: [4,3] },
   ]);
 
@@ -465,9 +466,9 @@ function renderOverviewKws(kws) {
 function buildGA4(data) {
   // 三線趨勢
   makeLine('c-ga4trend', [
-    { data: data.sessions_trend,  borderColor: '#2563EB', borderWidth: 2, pointRadius: 0, tension: 0.4 },
-    { data: data.users_trend,     borderColor: '#93c5fd', borderWidth: 1.5, pointRadius: 0, tension: 0.4, borderDash: [3,2] },
-    { data: data.new_users_trend, borderColor: '#d1fae5', borderWidth: 1.5, pointRadius: 0, tension: 0.4, borderDash: [2,2] },
+    { data: data.sessions_trend,  borderColor: '#7C3AED', borderWidth: 2, pointRadius: 0, tension: 0.4 },
+    { data: data.users_trend,     borderColor: '#c4b5fd', borderWidth: 1.5, pointRadius: 0, tension: 0.4, borderDash: [3,2] },
+    { data: data.new_users_trend, borderColor: '#ddd6fe', borderWidth: 1.5, pointRadius: 0, tension: 0.4, borderDash: [2,2] },
   ]);
 
   // 裝置圓環
@@ -511,8 +512,8 @@ function buildSC(data) {
       data: {
         labels: labels,
         datasets: [
-          { data: data.ssc_imp,   borderColor: '#2563EB', borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true, backgroundColor: 'rgba(37,99,235,0.04)', yAxisID: 'y' },
-          { data: data.ssc_click, borderColor: '#16a34a', borderWidth: 2, pointRadius: 0, tension: 0.4, borderDash: [3,2], yAxisID: 'y2' },
+          { data: data.ssc_imp,   borderColor: '#7C3AED', borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true, backgroundColor: 'rgba(124,58,237,0.04)', yAxisID: 'y' },
+          { data: data.ssc_click, borderColor: '#a78bfa', borderWidth: 2, pointRadius: 0, tension: 0.4, borderDash: [3,2], yAxisID: 'y2' },
         ],
       },
       options: {
@@ -564,7 +565,7 @@ function renderKwTable(kws) {
 function buildAds(data) {
   // 花費 vs 收益趨勢
   makeLine('c-adtrend', [
-    { data: data.ad_revenue, borderColor: '#2563EB', borderWidth: 2, pointRadius: 0, tension: 0.4 },
+    { data: data.ad_revenue, borderColor: '#7C3AED', borderWidth: 2, pointRadius: 0, tension: 0.4 },
     { data: data.ad_spend,   borderColor: '#d1d5db', borderWidth: 1.5, pointRadius: 0, tension: 0.4, borderDash: [4,3] },
   ], v => '$' + v + 'K');
 
@@ -787,8 +788,8 @@ function openModal(id, param) {
           labels: ['週一','週二','週三','週四','週五','週六','週日'],
           datasets: [{
             data: Array.from({ length: 7 }, () => Math.round(800 + Math.random() * 1200)),
-            borderColor: '#2563EB', borderWidth: 2, pointRadius: 0, tension: 0.4,
-            fill: true, backgroundColor: 'rgba(37,99,235,0.05)',
+            borderColor: '#7C3AED', borderWidth: 2, pointRadius: 0, tension: 0.4,
+            fill: true, backgroundColor: 'rgba(124,58,237,0.05)',
           }],
         },
         options: {
