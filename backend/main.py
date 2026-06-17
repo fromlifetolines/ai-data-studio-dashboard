@@ -1243,8 +1243,15 @@ async def get_dashboard(
                     generate_insight, temp_analytics_data, openai_key, gemini_key
                 )
             except Exception as e:
-                print(f"[WARN] AI 洞察生成失敗：{e}")
-                ai_summary = f"AI 分析失敗：{e}"
+                err_msg = str(e)
+                print(f"[WARN] AI 洞察生成失敗：{err_msg}")
+                if "429" in err_msg or "quota" in err_msg.lower() or "limit" in err_msg.lower() or "exhausted" in err_msg.lower():
+                    ai_summary = (
+                        "⚠️ <strong>AI 額度限制</strong>：您的 Gemini/OpenAI API 金鑰已達到免費方案的調用次數限制 (每日額度 20 次已用罄)。"
+                        "請稍候再試，或點擊頁面右上角的<strong>「設定 (⚙️)」</strong>按鈕更新或升級您的 API 金鑰，以享有流暢的行銷顧問摘要服務。"
+                    )
+                else:
+                    ai_summary = f"⚠️ <strong>AI 分析服務異常</strong>：請確認您的 API 金鑰效性或連線狀態。(錯誤原因: {err_msg})"
 
         labels = ga4_sessions_trend.get("labels", []) if (ga4_sessions_trend and isinstance(ga4_sessions_trend, dict)) else demo.get("labels", [])
         data_payload = {
@@ -1470,7 +1477,15 @@ async def ai_chat(req: AIChatRequest):
         )
         return {"reply": reply, "mode": "live"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI 分析失敗：{str(e)}")
+        err_msg = str(e)
+        if "429" in err_msg or "quota" in err_msg.lower() or "limit" in err_msg.lower() or "exhausted" in err_msg.lower():
+            friendly_err = (
+                "⚠️ AI 行銷顧問對話額度已用完。您目前使用的 Gemini API Key (免費版) 限制每日最多調用 20 次。 "
+                "請點擊右上角「設定」按鈕更換您的 API 金鑰，或於稍後再試。"
+            )
+            raise HTTPException(status_code=429, detail=friendly_err)
+        else:
+            raise HTTPException(status_code=500, detail=f"AI 分析失敗：{err_msg}")
 
 @app.post("/api/seo/evaluate")
 async def evaluate_seo_endpoint(req: SEOEvaluateRequest):
