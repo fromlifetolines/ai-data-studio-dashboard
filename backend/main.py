@@ -1272,6 +1272,8 @@ async def get_dashboard(
             "ad_revenue": ad_rev_trend,
             "ad_spend": ad_spend_trend,
             "budget": budget,
+            "gads_campaigns": gads_campaigns if gads_campaigns is not None else [],
+            "meta_campaigns": meta_campaigns if meta_campaigns is not None else [],
         }
 
         return JSONResponse(content={
@@ -1577,6 +1579,16 @@ def _get_demo_data() -> dict:
             {"label": "Meta",    "value": 34, "color": "#6b7280"},
             {"label": "YouTube", "value": 11, "color": "#d1d5db"},
         ],
+        "gads_campaigns": [
+            {"name": "Google_Search_品牌詞專案", "spend": 28400, "imp": 120000, "click": 8400, "conv": 620, "cpa": 45.8, "roas": 4.8, "status": "good", "campaign_status": "ENABLED"},
+            {"name": "Google_Display_核心受眾開發", "spend": 19800, "imp": 250000, "click": 6200, "conv": 280, "cpa": 70.7, "roas": 3.2, "status": "good", "campaign_status": "ENABLED"},
+            {"name": "Google_PerformanceMax_全品類導購", "spend": 20000, "imp": 150000, "click": 3800, "conv": 240, "cpa": 83.3, "roas": 4.1, "status": "good", "campaign_status": "ENABLED"},
+        ],
+        "meta_campaigns": [
+            {"name": "Meta_Conversion_女裝春季新品", "spend": 25000, "imp": 420000, "click": 6800, "conv": 380, "cpa": 65.8, "roas": 3.1, "status": "good"},
+            {"name": "Meta_Traffic_官網流量導流", "spend": 8300, "imp": 280000, "click": 3100, "conv": 80, "cpa": 103.7, "roas": 1.2, "status": "bad"},
+            {"name": "Meta_Conversion_節慶促銷再行銷", "spend": 9000, "imp": 190000, "click": 1300, "conv": 120, "cpa": 75.0, "roas": 3.5, "status": "good"},
+        ]
     }
 
 

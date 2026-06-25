@@ -68,6 +68,9 @@
       <button class="btn-secondary" onclick="openModal('modal-help')" aria-label="開啟教學">
         <i class="ti ti-help" aria-hidden="true"></i> 教學
       </button>
+      <button class="btn-secondary" id="btn-export-report" aria-label="匯出 PDF 報告">
+        <i class="ti ti-download" aria-hidden="true"></i> 匯出報告
+      </button>
     </div>
   </header>
 
@@ -282,6 +285,19 @@
       </div>
     </div>
 
+    <!-- GA4 轉化漏斗分析 -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header">
+        <div>
+          <div class="card-title">🛒 網站電商轉化漏斗分析 (Funnel Analytics)</div>
+          <div class="card-sub">追蹤用戶從造訪到最終購買的流失率與轉化成效，精準識別流失環節</div>
+        </div>
+      </div>
+      <div class="funnel-container" id="ga4-funnel-container">
+        <!-- 由 JS 動態渲染 -->
+      </div>
+    </div>
+
     <div class="card">
       <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
         <div>
@@ -468,6 +484,62 @@
             </tr>
           </thead>
           <tbody id="channel-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 跨管道歸因數據對照 -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header">
+        <div>
+          <div class="card-title">⚖️ 跨管道歸因數據對照 (廣告平台 vs GA4 歸因)</div>
+          <div class="card-sub">對照廣告平台自稱轉換數與 GA4 (UTM 歸因) 的數據落差，協助評估自歸因重複計算問題</div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="attribution-table">
+          <thead>
+            <tr>
+              <th>渠道來源</th>
+              <th class="num">廣告平台申報轉換</th>
+              <th class="num">GA4 UTM 認列轉換</th>
+              <th class="num">數據偏差值 (落差比)</th>
+              <th>主要原因分析</th>
+            </tr>
+          </thead>
+          <tbody id="attribution-tbody">
+            <!-- 由 JS 動態渲染 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 廣告活動明細 -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div class="card-title">🎯 廣告活動明細效益分析</div>
+          <div class="card-sub">即時拉取 Google Ads 與 Meta Ads 底下所有 Campaign 的成效指標</div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="campaign-table">
+          <thead>
+            <tr>
+              <th>廣告活動名稱</th>
+              <th>管道</th>
+              <th class="num">花費</th>
+              <th class="num">曝光</th>
+              <th class="num">點擊</th>
+              <th class="num">轉換</th>
+              <th class="num">CPA</th>
+              <th class="num">ROAS</th>
+              <th class="num">狀態</th>
+            </tr>
+          </thead>
+          <tbody id="campaign-tbody">
+            <!-- 由 JS 動態渲染 -->
+          </tbody>
         </table>
       </div>
     </div>

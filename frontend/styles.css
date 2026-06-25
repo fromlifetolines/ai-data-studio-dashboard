@@ -1366,3 +1366,128 @@ canvas { display: block; }
   color: #EF4444;
 }
 
+/* GA4 電商轉化漏斗樣式 */
+.funnel-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg);
+  border-radius: var(--radius-md);
+}
+.funnel-stage {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.funnel-stage-name {
+  width: 130px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.funnel-stage-track {
+  flex: 1;
+  height: 28px;
+  background: var(--border);
+  border-radius: 30px;
+  overflow: hidden;
+  position: relative;
+}
+.funnel-stage-fill {
+  background: linear-gradient(135deg, #7C3AED, #A78BFA);
+  height: 100%;
+  border-radius: 30px;
+  display: flex;
+  align-items: center;
+  padding-left: 14px;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.funnel-stage-val {
+  margin-left: auto;
+  padding-right: 14px;
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 28px;
+}
+.funnel-stage-fill .funnel-stage-val {
+  color: white;
+  padding-right: 0;
+  margin-right: 14px;
+}
+.funnel-stage-gap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 144px;
+  height: 20px;
+}
+.funnel-drop-badge {
+  font-size: 9px;
+  font-weight: 600;
+  color: #EF4444;
+  background: #FEE2E2;
+  padding: 2px 8px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 專業列印報告格式 */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #111827 !important;
+    font-size: 10pt;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .topbar, 
+  .btn-primary, 
+  .btn-secondary, 
+  .link-btn, 
+  .seg-ctrl, 
+  .status-dot, 
+  .ai-orb, 
+  .ai-actions, 
+  .notice-bar, 
+  #filter-pages, 
+  #filter-keywords,
+  .date-picker {
+    display: none !important;
+  }
+  .page {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    page-break-after: always;
+    break-after: page;
+    margin: 0 !important;
+    padding: 30px 0 !important;
+    box-shadow: none !important;
+  }
+  /* 讓每個頁面在大標題前分頁 */
+  .page .ai-insight,
+  .page .kpi-grid {
+    break-before: avoid;
+    page-break-before: avoid;
+  }
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #e5e7eb !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 20px !important;
+    background: #ffffff !important;
+  }
+  .chart-wrap {
+    max-height: 220px !important;
+  }
+}
+
+
