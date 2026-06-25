@@ -641,21 +641,33 @@ function renderFunnel(data) {
   const container = document.getElementById('ga4-funnel-container');
   if (!container) return;
 
-  // 取得 Sessions 與 Conversions 的數值
-  let sessionsVal = parseInt(String(data.kpis?.sessions?.value || '0').replace(/,/g, ''), 10) || 38241;
-  let purchasesVal = parseInt(String(data.kpis?.conversions?.value || '0').replace(/,/g, ''), 10) || 1462;
+  // 取得 Sessions 與 Conversions 的數值，正確處理 0 值的狀況（避免 fallback 到 MOCK 值）
+  let sessionsVal = parseInt(String(data.kpis?.sessions?.value || '0').replace(/,/g, ''), 10);
+  if (isNaN(sessionsVal)) sessionsVal = 38241;
+  
+  let purchasesVal = parseInt(String(data.kpis?.conversions?.value || '0').replace(/,/g, ''), 10);
+  if (isNaN(purchasesVal)) purchasesVal = 1462;
 
   // 計算中階漏斗漏失率
   let viewsVal = Math.round(sessionsVal * 0.85);
   let cartVal = Math.round(sessionsVal * 0.15);
   let checkoutVal = Math.round(sessionsVal * 0.08);
 
+  // 如果購買次數大於結帳次數，將其收攏到結帳次數內（防呆）
+  if (purchasesVal > checkoutVal && purchasesVal > 0) {
+    if (checkoutVal > 0) {
+      purchasesVal = Math.round(checkoutVal * 0.5);
+    } else {
+      purchasesVal = 0;
+    }
+  }
+
   const steps = [
     { name: "1. 全站造訪工作階段 (Sessions)", val: sessionsVal, pct: 100 },
-    { name: "2. 產品內容瀏覽量 (Product Views)", val: viewsVal, pct: Math.round(viewsVal / sessionsVal * 100) },
-    { name: "3. 購物車加入次數 (Add to Cart)", val: cartVal, pct: Math.round(cartVal / sessionsVal * 100) },
-    { name: "4. 發起結帳流程 (Checkouts)", val: checkoutVal, pct: Math.round(checkoutVal / sessionsVal * 100) },
-    { name: "5. 完成購買交易 (Purchases)", val: purchasesVal, pct: Math.round(purchasesVal / sessionsVal * 100) }
+    { name: "2. 產品內容瀏覽量 (Product Views)", val: viewsVal, pct: sessionsVal > 0 ? Math.round(viewsVal / sessionsVal * 100) : 0 },
+    { name: "3. 購物車加入次數 (Add to Cart)", val: cartVal, pct: sessionsVal > 0 ? Math.round(cartVal / sessionsVal * 100) : 0 },
+    { name: "4. 發起結帳流程 (Checkouts)", val: checkoutVal, pct: sessionsVal > 0 ? Math.round(checkoutVal / sessionsVal * 100) : 0 },
+    { name: "5. 完成購買交易 (Purchases)", val: purchasesVal, pct: sessionsVal > 0 ? Math.round(purchasesVal / sessionsVal * 100) : 0 }
   ];
 
   let html = "";
