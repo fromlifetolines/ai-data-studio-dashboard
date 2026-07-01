@@ -1370,29 +1370,32 @@ canvas { display: block; }
 .funnel-container {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px;
+  gap: 14px;
+  padding: 20px;
   background: var(--bg);
   border-radius: var(--radius-md);
+  border: 1px solid var(--border);
 }
 .funnel-stage {
   display: flex;
-  align-items: center;
-  gap: 14px;
+  flex-direction: column;
+  gap: 6px;
 }
 .funnel-stage-name {
-  width: 130px;
   font-size: 11px;
   font-weight: 600;
   color: var(--text-primary);
+  text-align: center;
 }
 .funnel-stage-track {
-  flex: 1;
-  height: 28px;
+  width: 100%;
+  height: 32px;
   background: var(--border);
   border-radius: 30px;
   overflow: hidden;
   position: relative;
+  display: flex;
+  justify-content: center; /* Centered funnel effect */
 }
 .funnel-stage-fill {
   background: linear-gradient(135deg, #7C3AED, #A78BFA);
@@ -1400,43 +1403,89 @@ canvas { display: block; }
   border-radius: 30px;
   display: flex;
   align-items: center;
-  padding-left: 14px;
+  justify-content: center;
   color: white;
   font-size: 11px;
   font-weight: 600;
+  box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.2);
   transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0 16px;
 }
 .funnel-stage-val {
-  margin-left: auto;
-  padding-right: 14px;
-  color: var(--text-secondary);
-  font-size: 10px;
-  font-weight: 500;
-  line-height: 28px;
-}
-.funnel-stage-fill .funnel-stage-val {
   color: white;
-  padding-right: 0;
-  margin-right: 14px;
+  font-size: 10px;
+  font-weight: 600;
 }
 .funnel-stage-gap {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-left: 144px;
-  height: 20px;
+  height: 24px;
+  position: relative;
+}
+.funnel-stage-gap::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: dashed var(--border-mid);
+  z-index: 1;
 }
 .funnel-drop-badge {
   font-size: 9px;
-  font-weight: 600;
+  font-weight: 700;
   color: #EF4444;
   background: #FEE2E2;
-  padding: 2px 8px;
+  border: 1px solid #FECACA;
+  padding: 3px 10px;
   border-radius: 20px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  z-index: 2;
 }
+
+/* Demographics Bar styling */
+.demo-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 10px;
+}
+.demo-bar-lbl {
+  width: 48px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.demo-bar-track {
+  flex: 1;
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.demo-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--accent);
+}
+.demo-bar-fill.gender-female {
+  background: #EC4899;
+}
+.demo-bar-fill.gender-male {
+  background: #3B82F6;
+}
+.demo-bar-fill.gender-other {
+  background: #9CA3AF;
+}
+.demo-bar-val {
+  width: 28px;
+  text-align: right;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
 
 /* 專業列印報告格式 */
 @media print {

@@ -26,7 +26,7 @@ from ga4_client import GA4Client, GA4Config
 from ai_insight_engine import generate_insight, generate_chat_reply
 from gsc_client import GSCClient
 from gads_client import GoogleAdsClient
-from meta_client import MetaAdsClient
+from meta_client import MetaAdsClient, MetaOrganicClient
 import oauth_manager
 import seo_evaluator
 
@@ -70,8 +70,10 @@ class GAdsSettings(BaseModel):
     refresh_token: str
 
 class MetaSettings(BaseModel):
-    account_id: str
+    account_id: Optional[str] = ""
     token: str
+    facebook_page_id: Optional[str] = ""
+    instagram_business_id: Optional[str] = ""
 
 class SaveSettingsRequest(BaseModel):
     ga4: Optional[GA4Settings] = None
@@ -80,6 +82,8 @@ class SaveSettingsRequest(BaseModel):
     meta: Optional[MetaSettings] = None
     openai_key: Optional[str] = None
     gemini_key: Optional[str] = None
+    similarweb_key: Optional[str] = None
+    semrush_key: Optional[str] = None
 
 class ValidateRequest(BaseModel):
     property_id: str
@@ -96,8 +100,10 @@ class GAdsValidateRequest(BaseModel):
     refresh_token: str
 
 class MetaValidateRequest(BaseModel):
-    account_id: str
+    account_id: Optional[str] = ""
     token: str
+    facebook_page_id: Optional[str] = ""
+    instagram_business_id: Optional[str] = ""
 
 class AIValidateRequest(BaseModel):
     openai_key: Optional[str] = None
@@ -563,12 +569,20 @@ async def save_api_settings(req: SaveSettingsRequest):
     if req.meta:
         settings["meta_account_id"] = req.meta.account_id.strip()
         settings["meta_token"] = req.meta.token.strip()
+        settings["facebook_page_id"] = req.meta.facebook_page_id.strip() if req.meta.facebook_page_id else ""
+        settings["instagram_business_id"] = req.meta.instagram_business_id.strip() if req.meta.instagram_business_id else ""
 
     if req.openai_key is not None:
         settings["openai_key"] = req.openai_key.strip()
 
     if req.gemini_key is not None:
         settings["gemini_key"] = req.gemini_key.strip()
+
+    if req.similarweb_key is not None:
+        settings["similarweb_key"] = req.similarweb_key.strip()
+
+    if req.semrush_key is not None:
+        settings["semrush_key"] = req.semrush_key.strip()
 
     save_settings(settings)
     return {"success": True, "message": "設定已儲存"}
@@ -667,15 +681,38 @@ async def validate_gads(req: GAdsValidateRequest):
 @app.post("/api/settings/validate-meta")
 async def validate_meta(req: MetaValidateRequest):
     """
-    驗證 Meta Ads 連線
+    驗證 Meta 連線 (Ads / Organic)
     """
     try:
-        client = MetaAdsClient(
-            ad_account_id=req.account_id,
-            access_token=req.token
-        )
-        result = client.test_connection()
-        return {"success": True, "message": f"Meta Ads 連線成功！帳戶名稱: {result['name']}"}
+        messages = []
+        if req.account_id and req.account_id.strip():
+            client = MetaAdsClient(
+                ad_account_id=req.account_id,
+                access_token=req.token
+            )
+            result = client.test_connection()
+            messages.append(f"Meta Ads 連線成功！帳戶名稱: {result['name']}")
+        
+        if req.facebook_page_id or req.instagram_business_id:
+            organic_client = MetaOrganicClient(access_token=req.token)
+            if req.facebook_page_id and req.facebook_page_id.strip():
+                fb_info = organic_client.get_facebook_page_info(req.facebook_page_id)
+                if fb_info.get("name"):
+                    messages.append(f"Facebook 粉專連線成功！名稱: {fb_info['name']}")
+                else:
+                    raise Exception(f"Facebook 粉專 ID ({req.facebook_page_id}) 查無資料，或 Token 權限不足")
+            
+            if req.instagram_business_id and req.instagram_business_id.strip():
+                ig_info = organic_client.get_instagram_business_info(req.instagram_business_id)
+                if ig_info.get("name"):
+                    messages.append(f"Instagram 商業帳號連線成功！名稱: {ig_info['name']}")
+                else:
+                    raise Exception(f"Instagram 商業帳號 ID ({req.instagram_business_id}) 查無資料，或 Token 權限不足")
+        
+        if not messages:
+            raise Exception("請至少填入廣告帳號 ID、FB 粉專 ID 或 IG 商業帳號 ID 以供驗證。")
+
+        return {"success": True, "message": "、".join(messages)}
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"連線失敗：{str(e)}")
 
@@ -748,7 +785,9 @@ async def get_settings():
         "gads_configured":         bool(settings.get("gads_customer_id")),
         "meta_account_id":         settings.get("meta_account_id", ""),
         "meta_token":              settings.get("meta_token", ""),
-        "meta_configured":         bool(settings.get("meta_account_id"))
+        "facebook_page_id":        settings.get("facebook_page_id", ""),
+        "instagram_business_id":   settings.get("instagram_business_id", ""),
+        "meta_configured":         bool(settings.get("meta_account_id") or settings.get("facebook_page_id") or settings.get("instagram_business_id"))
     }
 
 # ── 完整 Dashboard 數據 ───────────────────────────────
@@ -826,6 +865,13 @@ async def get_dashboard(
                 access_token=settings["meta_token"]
             )
 
+        meta_organic_client = None
+        fb_page_id = settings.get("facebook_page_id")
+        ig_business_id = settings.get("instagram_business_id")
+        meta_token = settings.get("meta_token")
+        if (fb_page_id or ig_business_id) and meta_token:
+            meta_organic_client = MetaOrganicClient(access_token=meta_token)
+
         # 2. 並行拉取數據
         tasks = []
         
@@ -836,8 +882,12 @@ async def get_dashboard(
             tasks.append(asyncio.to_thread(ga4_client.get_traffic_sources, start_date, end_date))
             tasks.append(asyncio.to_thread(ga4_client.get_top_pages, start_date, end_date))
             tasks.append(asyncio.to_thread(ga4_client.get_device_breakdown, start_date, end_date))
+            tasks.append(asyncio.to_thread(ga4_client.get_ecommerce_overview, start_date, end_date))
+            tasks.append(asyncio.to_thread(ga4_client.get_top_products, start_date, end_date))
+            tasks.append(asyncio.to_thread(ga4_client.get_demographics, start_date, end_date))
+            tasks.append(asyncio.to_thread(ga4_client.get_funnel_analytics, start_date, end_date))
         else:
-            tasks.extend([None, None, None, None, None])
+            tasks.extend([None, None, None, None, None, None, None, None, None])
 
         # GSC Tasks
         if gsc_client:
@@ -862,6 +912,12 @@ async def get_dashboard(
         else:
             tasks.extend([None, None])
 
+        # Meta Organic Task
+        if meta_organic_client:
+            tasks.append(asyncio.to_thread(meta_organic_client.get_social_media_report, fb_page_id, ig_business_id))
+        else:
+            tasks.append(None)
+
         # 執行 Tasks
         # 過濾非 None 任務來並行執行，以防 exceptions
         exec_tasks = [t for t in tasks if t is not None]
@@ -883,10 +939,11 @@ async def get_dashboard(
                 result_idx += 1
 
         # 展開結果
-        ga4_overview, ga4_sessions_trend, ga4_traffic_sources, ga4_top_pages, ga4_device = results[0:5]
-        gsc_kws, gsc_trend, gsc_search_type, gsc_overview = results[5:9]
-        gads_campaigns, gads_trend = results[9:11]
-        meta_campaigns, meta_trend = results[11:13]
+        ga4_overview, ga4_sessions_trend, ga4_traffic_sources, ga4_top_pages, ga4_device, ga4_ecommerce, ga4_top_products, ga4_demographics, ga4_funnel = results[0:9]
+        gsc_kws, gsc_trend, gsc_search_type, gsc_overview = results[9:13]
+        gads_campaigns, gads_trend = results[13:15]
+        meta_campaigns, meta_trend = results[15:17]
+        meta_organic_report = results[17]
 
         demo = _get_demo_data()
 
@@ -1145,6 +1202,10 @@ async def get_dashboard(
         conversions_rate_val = "—"
         pages_per_sess_val = "—"
         conversions_val = "—"
+        ga4_revenue = 0.0
+        ga4_cart = 0
+        ga4_aov = 0.0
+        
         if ga4_client and ga4_overview:
             avg_duration_val = ga4_overview.get("avg_duration", "—")
             bounce_rate_val = ga4_overview.get("bounce_rate", "—")
@@ -1158,6 +1219,16 @@ async def get_dashboard(
             ga4_sessions = ga4_overview.get('sessions', 0)
             if ga4_sessions > 0:
                 conversions_rate_val = f"{ga4_overview.get('conversions', 0) / ga4_sessions * 100:.2f}%"
+                
+            # 使用真實 GA4 電商數據，不進行模擬填充
+            if ga4_ecommerce:
+                ga4_revenue = ga4_ecommerce.get("revenue", 0.0)
+                ga4_cart = ga4_ecommerce.get("cart_additions", 0)
+                ga4_aov = ga4_ecommerce.get("aov", 0.0)
+            else:
+                ga4_revenue = 0.0
+                ga4_cart = 0
+                ga4_aov = 0.0
 
         # Calculate GSC metrics
         clicks_val = "—"
@@ -1207,6 +1278,9 @@ async def get_dashboard(
             "conversions_rate":  {"value": conversions_rate_val, "delta": "—", "trend": "flat"},
             "pages_per_sess":    {"value": pages_per_sess_val, "delta": "—", "trend": "flat"},
             "conversions":       {"value": conversions_val,  "delta": "—", "trend": "flat"},
+            "ecommerce_revenue":  {"value": f"${ga4_revenue:,.2f}" if ga4_revenue > 0 else "$0.00", "delta": "—", "trend": "flat"},
+            "ecommerce_aov":      {"value": f"${ga4_aov:,.2f}" if ga4_aov > 0 else "$0.00", "delta": "—", "trend": "flat"},
+            "ecommerce_cart":     {"value": f"{ga4_cart:,}" if ga4_cart > 0 else "0", "delta": "—", "trend": "flat"},
             
             # GSC sub-page KPIs
             "clicks":            {"value": clicks_val,   "delta": "—", "trend": "flat"},
@@ -1226,6 +1300,11 @@ async def get_dashboard(
         openai_key = settings.get("openai_key") or os.getenv("OPENAI_API_KEY", "")
         gemini_key = settings.get("gemini_key") or os.getenv("GEMINI_API_KEY", "")
         ai_summary = ""
+        ai_roadmap = {
+            "short_term": "<strong>調整低 ROAS 廣告預算</strong>：將本週成效較低的付費廣告預算轉移至高點閱率 (CTR) 的渠道，並立即修復高跳出率頁面的 CTA 按鈕。",
+            "medium_term": "<strong>進行關鍵字 Topic Cluster 優化</strong>：針對 GSC 曝光高但點擊低的潛力長尾字詞撰寫專題內容，並優化產品導購流程，降低購物車流失率。",
+            "long_term": "<strong>布局 AI 搜尋能見度 (GEO)</strong>：強化網站的 JSON-LD 結構化資料，爭取在 Google AIO 與 ChatGPT 推薦清單中被引用，建立長期自然增長壁壘。"
+        }
         if openai_key or gemini_key:
             try:
                 if gemini_key:
@@ -1242,6 +1321,10 @@ async def get_dashboard(
                 ai_summary = await asyncio.to_thread(
                     generate_insight, temp_analytics_data, openai_key, gemini_key
                 )
+                from ai_insight_engine import generate_action_roadmap
+                ai_roadmap = await asyncio.to_thread(
+                    generate_action_roadmap, temp_analytics_data, openai_key, gemini_key
+                )
             except Exception as e:
                 err_msg = str(e)
                 print(f"[WARN] AI 洞察生成失敗：{err_msg}")
@@ -1253,9 +1336,20 @@ async def get_dashboard(
                 else:
                     ai_summary = f"⚠️ <strong>AI 分析服務異常</strong>：請確認您的 API 金鑰效性或連線狀態。(錯誤原因: {err_msg})"
 
-        labels = ga4_sessions_trend.get("labels", []) if (ga4_sessions_trend and isinstance(ga4_sessions_trend, dict)) else demo.get("labels", [])
+        # Calculate Data Quality Metrics from Traffic Sources
+        unassigned_sessions = sum(
+            s.get("sessions", 0) 
+            for s in t_sources 
+            if isinstance(s, dict) and ("(not set)" in s.get("source", "").lower() or "unassigned" in s.get("source", "").lower() or "unassigned" in s.get("medium", "").lower())
+        )
+        total_sessions = sum(s.get("sessions", 0) for s in t_sources if isinstance(s, dict)) or 1
+        data_quality_pct = round((unassigned_sessions / total_sessions) * 100, 1)
+
+        labels = ga4_sessions_trend.get("labels", []) if (ga4_sessions_trend and isinstance(ga4_sessions_trend, dict)) else []
         data_payload = {
             "ai_summary": ai_summary or f"已成功串接真實數據！工作階段共 {ga4_overview.get('sessions', 0):,} 次，自然點擊 {sum(ssc_click):,} 次，廣告總花費 ${total_spend:,.0f}，全渠道 ROAS {roas_val}。",
+            "ai_roadmap": ai_roadmap,
+            "data_quality_pct": data_quality_pct,
             "labels": labels,
             "kpis": kpis,
             "sessions_trend": s_trend,
@@ -1274,6 +1368,35 @@ async def get_dashboard(
             "budget": budget,
             "gads_campaigns": gads_campaigns if gads_campaigns is not None else [],
             "meta_campaigns": meta_campaigns if meta_campaigns is not None else [],
+            "top_products": ga4_top_products if ga4_top_products is not None else [],
+            "core_web_vitals": {
+                "lcp": {"val": "—", "status": "flat"},
+                "inp": {"val": "—", "status": "flat"},
+                "cls": {"val": "—", "status": "flat"},
+                "mobile": {"val": "—", "status": "flat"},
+                "index": {"val": "—", "status": "flat"}
+            },
+            "video_metrics": {
+                "hook_rate": "—",
+                "hold_rate": "—",
+                "progress": [
+                    {"label": "25% 觀看", "value": 0},
+                    {"label": "50% 觀看", "value": 0},
+                    {"label": "75% 觀看", "value": 0},
+                    {"label": "100% 觀看", "value": 0}
+                ]
+            },
+            "social_media": meta_organic_report if meta_organic_report is not None else {
+                "followers": {"val": "—", "delta": "—"},
+                "reach": {"followers": 0, "non_followers": 0},
+                "reach_delta": "—",
+                "engagement": {"reactions": 0, "comments": 0, "shares": 0, "saves": 0},
+                "engagement_delta": "—",
+                "er_delta": "—",
+                "top_posts": []
+            },
+            "demographics": ga4_demographics if ga4_demographics is not None else {"age": [], "gender": [], "cities": []},
+            "funnel": ga4_funnel if ga4_funnel is not None else {"sessions": 0, "product_views": 0, "add_to_cart": 0, "checkouts": 0, "purchases": 0}
         }
 
         return JSONResponse(content={
@@ -1525,6 +1648,12 @@ def _get_demo_data() -> dict:
     """回傳 Demo 模式假數據，與前端 MOCK 對應"""
     return {
         "ai_summary": "這是 <strong>Demo 模式</strong>，目前顯示的是示範數據。請前往「設定」頁面串接你的 GA4 帳號，即可看到真實數據與 AI 分析。",
+        "ai_roadmap": {
+            "short_term": "<strong>調整低 ROAS 廣告預算</strong>：將本週成效較低的付費廣告預算轉移至高點閱率 (CTR) 的渠道，並立即修復高跳出率頁面的 CTA 按鈕。",
+            "medium_term": "<strong>進行關鍵字 Topic Cluster 優化</strong>：針對 GSC 曝光高但點擊低的潛力長尾字詞撰寫專題內容，並優化產品導購流程，降低購物車流失率。",
+            "long_term": "<strong>布局 AI 搜尋能見度 (GEO)</strong>：強化網站的 JSON-LD 結構化資料，爭取在 Google AIO 與 ChatGPT 推薦清單中被引用，建立長期自然增長壁壘。"
+        },
+        "data_quality_pct": 2.4,
         "labels": ["5/26","5/27","5/28","5/29","5/30","5/31","6/1","6/2","6/3","6/4","6/5","6/6","6/7","6/8"],
         "kpis": {
             "sessions":    {"value": "38,241", "delta": "+9.4%", "trend": "up"},
@@ -1588,10 +1717,254 @@ def _get_demo_data() -> dict:
             {"name": "Meta_Conversion_女裝春季新品", "spend": 25000, "imp": 420000, "click": 6800, "conv": 380, "cpa": 65.8, "roas": 3.1, "status": "good"},
             {"name": "Meta_Traffic_官網流量導流", "spend": 8300, "imp": 280000, "click": 3100, "conv": 80, "cpa": 103.7, "roas": 1.2, "status": "bad"},
             {"name": "Meta_Conversion_節慶促銷再行銷", "spend": 9000, "imp": 190000, "click": 1300, "conv": 120, "cpa": 75.0, "roas": 3.5, "status": "good"},
-        ]
+        ],
+        "top_products": [
+            {"name": "AI 數據分析工作坊 Pro 課程", "views": 1840, "cart": 420, "buy": 112, "rev": 222880},
+            {"name": "SEO 自動優化軟體 (SaaS 季訂閱)", "views": 1250, "cart": 290, "buy": 64, "rev": 192000},
+            {"name": "全方位行銷健檢與顧問諮詢服務", "views": 840, "cart": 150, "buy": 28, "rev": 140000},
+            {"name": "電子商務 GA4 設定實戰電子書", "views": 2400, "cart": 560, "buy": 186, "rev": 74020},
+            {"name": "廣告投放成效追蹤代碼部署包", "views": 620, "cart": 95, "buy": 18, "rev": 36000}
+        ],
+        "core_web_vitals": {
+            "lcp": {"val": "1.8s", "status": "good"},
+            "inp": {"val": "120ms", "status": "good"},
+            "cls": {"val": "0.08", "status": "good"},
+            "mobile": {"val": "98%", "status": "good"},
+            "index": {"val": "85%", "status": "warn"}
+        },
+        "video_metrics": {
+            "hook_rate": "62.4%",
+            "hold_rate": "38.2%",
+            "progress": [
+                {"label": "25% 觀看", "value": 75},
+                {"label": "50% 觀看", "value": 52},
+                {"label": "75% 觀看", "value": 34},
+                {"label": "100% 觀看", "value": 18}
+            ]
+        },
+        "social_media": {
+            "followers": {"val": "18,240", "delta": "+450"},
+            "reach": {"followers": 45, "non_followers": 55},
+            "reach_delta": "↑ +12.4% 破圈率",
+            "engagement": {"reactions": 1240, "comments": 245, "shares": 380, "saves": 195},
+            "engagement_delta": "↑ +8.4%",
+            "er_delta": "— 持平",
+            "top_posts": [
+                {"content": "💡【行銷人必學】2026年 GA4 設定四大雷區！避開這幾點讓你報表不再失真...", "type": "圖片", "reach": 12400, "shares": 185, "er": "5.4%"},
+                {"content": "🎬 實測！利用 AI 生成爆款廣告素材，ROAS 直接翻倍的秘密武器...", "type": "影片", "reach": 18200, "shares": 312, "er": "7.2%"},
+                {"content": "📢 允越科技獲評年度最佳數位轉型合作夥伴！感謝所有客戶的支持...", "type": "純文字", "reach": 5800, "shares": 24, "er": "3.1%"},
+                {"content": "❓ 為什麼你的 SEO 做了半年都沒動靜？這三個核心關鍵字策略你漏掉了嗎...", "type": "圖片", "reach": 9600, "shares": 94, "er": "4.8%"}
+            ]
+        },
+        "demographics": {
+            "age": [
+                {"label": "18-24", "value": 15},
+                {"label": "25-34", "value": 45},
+                {"label": "35-44", "value": 25},
+                {"label": "45-54", "value": 10},
+                {"label": "55+", "value": 5}
+            ],
+            "gender": [
+                {"label": "女性", "value": 52},
+                {"label": "男性", "value": 44},
+                {"label": "其他", "value": 4}
+            ],
+            "cities": [
+                {"label": "台北市", "value": 42},
+                {"label": "新北市", "value": 24},
+                {"label": "台中市", "value": 14},
+                {"label": "高雄市", "value": 12},
+                {"label": "其他", "value": 8}
+            ]
+        }
     }
+
+
+# ── 競品情報系統端點 (Competitive Intelligence Platform Endpoints) ──
+
+from pydantic import BaseModel
+
+class CompetitorAddRequest(BaseModel):
+    project_id: str
+    name: str
+    domain: str
+    type: str  # 'direct', 'indirect', 'benchmark'
+    is_own_company: Optional[bool] = False
+
+class ProjectCreateRequest(BaseModel):
+    name: str
+    industry: str
+
+class FieldSurveyRequest(BaseModel):
+    competitor_id: str
+    surveyor: str
+    location: str
+    foot_traffic_score: int
+    product_display_notes: str
+    photo_base64: Optional[str] = ""
+
+@app.get("/api/projects")
+async def list_projects():
+    from database import get_db_connection
+    config = load_all_settings()
+    active_id = config.get("active_profile_id", "default")
+    profile = config.setdefault("profiles", {}).setdefault(active_id, {})
+    profile_name = profile.get("name", "預設專案")
+    
+    settings = load_settings()
+    site_url = settings.get("gsc_site_url", "www.bojian.com.tw")
+    
+    with get_db_connection() as conn:
+        proj = conn.execute("SELECT * FROM projects WHERE id = ?", (active_id,)).fetchone()
+        
+    if not proj:
+        # Seed a new project for this active profile
+        industry = "生技醫療儀器"
+        if "yunyue" in site_url or "允越" in site_url:
+            industry = "科技研發與AI轉型"
+        elif "bojian" in site_url or "burgeon" in site_url:
+            industry = "生技醫療儀器"
+        elif "fltf" in site_url.lower() or "fltf" in profile_name.lower():
+            industry = "物聯網與智能製造"
+        else:
+            industry = "商業整合服務"
+            
+        with get_db_connection() as conn:
+            conn.execute(
+                "INSERT INTO projects (id, name, industry) VALUES (?, ?, ?)",
+                (active_id, f"{profile_name}競品專案", industry)
+            )
+            # Add own brand
+            import uuid
+            own_id = str(uuid.uuid4())
+            conn.execute(
+                "INSERT INTO competitors (id, project_id, name, domain, type, is_own_company) VALUES (?, ?, ?, ?, 'direct', 1)",
+                (own_id, active_id, "我方品牌", site_url)
+            )
+            conn.commit()
+    else:
+        # Update own brand URL to match latest settings
+        with get_db_connection() as conn:
+            conn.execute(
+                "UPDATE competitors SET domain = ? WHERE project_id = ? AND is_own_company = 1",
+                (site_url, active_id)
+            )
+            conn.commit()
+            
+    with get_db_connection() as conn:
+        p = conn.execute("SELECT * FROM projects WHERE id = ?", (active_id,)).fetchone()
+        
+    return [{"id": p["id"], "name": p["name"], "industry": p["industry"]}]
+
+@app.post("/api/projects/create")
+async def create_project(req: ProjectCreateRequest):
+    from database import get_db_connection
+    import uuid
+    project_id = str(uuid.uuid4())
+    with get_db_connection() as conn:
+        conn.execute(
+            "INSERT INTO projects (id, name, industry) VALUES (?, ?, ?)",
+            (project_id, req.name, req.industry)
+        )
+        conn.commit()
+    return {"status": "success", "project_id": project_id}
+
+@app.get("/api/projects/{project_id}/competitors")
+async def list_competitors(project_id: str):
+    from database import get_db_connection
+    with get_db_connection() as conn:
+        rows = conn.execute("SELECT * FROM competitors WHERE project_id = ?", (project_id,)).fetchall()
+    return [{"id": r["id"], "name": r["name"], "domain": r["domain"], "type": r["type"], "is_own_company": bool(r["is_own_company"])} for r in rows]
+
+@app.post("/api/projects/{project_id}/competitors")
+async def add_competitor(project_id: str, req: CompetitorAddRequest):
+    from competitor_intelligence import add_competitor_to_db
+    comp_id = add_competitor_to_db(project_id, req.name, req.domain, req.type, req.is_own_company)
+    return {"status": "success", "competitor_id": comp_id}
+
+@app.post("/api/projects/{project_id}/fetch-all")
+async def trigger_fetch_all(project_id: str):
+    from competitor_intelligence import fetch_project_competitors_all
+    settings = load_settings()
+    gemini_key = settings.get("gemini_key") or os.getenv("GEMINI_API_KEY", "")
+    
+    results = await fetch_project_competitors_all(project_id, gemini_key=gemini_key)
+    return {"status": "success", "fetched_count": len(results)}
+
+@app.get("/api/projects/{project_id}/matrix")
+async def get_matrix(project_id: str):
+    from competitor_intelligence import get_comparison_matrix_data
+    data = get_comparison_matrix_data(project_id)
+    return {"matrix": data}
+
+@app.get("/api/projects/{project_id}/swot")
+async def get_swot(project_id: str):
+    from competitor_intelligence import get_comparison_matrix_data
+    from analyzers.swot_engine import generate_swot_analysis
+    settings = load_settings()
+    gemini_key = settings.get("gemini_key") or os.getenv("GEMINI_API_KEY", "")
+    
+    matrix = get_comparison_matrix_data(project_id)
+    swot = generate_swot_analysis(project_id, matrix, gemini_key)
+    return {"swot": swot}
+
+@app.get("/api/projects/{project_id}/porter")
+async def get_porter(project_id: str):
+    from competitor_intelligence import get_comparison_matrix_data
+    from analyzers.porter_engine import evaluate_porter_forces
+    matrix = get_comparison_matrix_data(project_id)
+    porter = evaluate_porter_forces(project_id, matrix)
+    return {"porter": porter}
+
+@app.get("/api/projects/{project_id}/positioning")
+async def get_positioning(project_id: str, x: str = "traffic", y: str = "sentiment"):
+    from competitor_intelligence import get_comparison_matrix_data
+    from analyzers.positioning_map import generate_positioning_map
+    matrix = get_comparison_matrix_data(project_id)
+    points = generate_positioning_map(matrix, x, y)
+    return {"points": points}
+
+@app.post("/api/field-survey")
+async def submit_field_survey(req: FieldSurveyRequest):
+    from database import get_db_connection
+    import uuid
+    import datetime
+    survey_id = str(uuid.uuid4())
+    today = datetime.date.today().isoformat()
+    
+    with get_db_connection() as conn:
+        conn.execute(
+            """
+            INSERT INTO field_surveys (id, competitor_id, surveyor, location, survey_date, foot_traffic_score, product_display_notes, photos)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (survey_id, req.competitor_id, req.surveyor, req.location, today, req.foot_traffic_score, req.product_display_notes, json.dumps([req.photo_base64] if req.photo_base64 else []))
+        )
+        conn.commit()
+    return {"status": "success", "survey_id": survey_id}
+
+@app.get("/api/projects/{project_id}/report/download")
+async def download_report(project_id: str):
+    from database import get_db_connection
+    from report_generator import generate_markdown_report
+    from fastapi.responses import PlainTextResponse
+    
+    with get_db_connection() as conn:
+        project = conn.execute("SELECT * FROM projects WHERE id = ?", (project_id,)).fetchone()
+    
+    project_name = project["name"] if project else "競品專案"
+    settings = load_settings()
+    gemini_key = settings.get("gemini_key") or os.getenv("GEMINI_API_KEY", "")
+    
+    md_content = generate_markdown_report(project_id, project_name, gemini_key)
+    
+    return PlainTextResponse(
+        content=md_content,
+        headers={"Content-Disposition": f"attachment; filename=competitor_report_{project_id}.md"}
+    )
 
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+

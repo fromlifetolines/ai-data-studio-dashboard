@@ -37,7 +37,9 @@
       <button class="tab"    role="tab" aria-selected="false" onclick="goTab(2)">Search Console</button>
       <button class="tab"    role="tab" aria-selected="false" onclick="goTab(3)">廣告投放</button>
       <button class="tab"    role="tab" aria-selected="false" onclick="goTab(4)">AI SEO 曝光測評</button>
-      <button class="tab"    role="tab" aria-selected="false" onclick="goTab(5)">串接教學</button>
+      <button class="tab"    role="tab" aria-selected="false" onclick="goTab(5)">社群經營</button>
+      <button class="tab"    role="tab" aria-selected="false" onclick="goTab(6)">串接教學</button>
+      <button class="tab"    role="tab" aria-selected="false" onclick="goTab(7)">市場與競品分析</button>
     </nav>
     <div class="topbar-right">
       <div class="date-picker" role="button" aria-label="選擇日期範圍" tabindex="0" id="date-picker-btn">
@@ -132,6 +134,39 @@
         <div class="kpi-value" data-key="roas">3.61×</div>
         <div class="kpi-delta flat">— 持平</div>
         <div class="kpi-bar"><div class="kpi-bar-fill" style="width:55%;background:var(--muted)"></div></div>
+      </div>
+    </div>
+
+    <!-- AI 短中長期行動指南 -->
+    <div class="card" style="margin-bottom: 20px;">
+      <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <i class="ti ti-directions" style="font-size: 1.4rem; color: var(--accent);" aria-hidden="true"></i>
+          <div>
+            <div class="card-title">🎯 AI 短、中、長期行動決策指南</div>
+            <div class="card-sub">針對您的數據，AI 主動研判的行銷決策路線圖</div>
+          </div>
+        </div>
+      </div>
+      <div class="action-roadmap-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; padding: 16px;">
+        <div class="roadmap-card short-term" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 14px; border-radius: 8px;">
+          <div class="roadmap-header" style="margin-bottom: 8px;">
+            <span class="roadmap-badge badge-short" style="background: rgba(239,68,68,0.15); color: var(--danger); font-size: 0.8rem; padding: 3px 8px; border-radius: 4px; font-weight: 600;">短期戰術 (1-30天)</span>
+          </div>
+          <p id="roadmap-short-text" style="color: rgba(255,255,255,0.85); font-size: 0.9rem; line-height: 1.6; margin: 0;">載入中...</p>
+        </div>
+        <div class="roadmap-card medium-term" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 14px; border-radius: 8px;">
+          <div class="roadmap-header" style="margin-bottom: 8px;">
+            <span class="roadmap-badge badge-medium" style="background: rgba(37,99,235,0.15); color: var(--accent); font-size: 0.8rem; padding: 3px 8px; border-radius: 4px; font-weight: 600;">中期規劃 (30-90天)</span>
+          </div>
+          <p id="roadmap-medium-text" style="color: rgba(255,255,255,0.85); font-size: 0.9rem; line-height: 1.6; margin: 0;">載入中...</p>
+        </div>
+        <div class="roadmap-card long-term" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 14px; border-radius: 8px;">
+          <div class="roadmap-header" style="margin-bottom: 8px;">
+            <span class="roadmap-badge badge-long" style="background: rgba(16,185,129,0.15); color: var(--success); font-size: 0.8rem; padding: 3px 8px; border-radius: 4px; font-weight: 600;">長期戰略 (90天+)</span>
+          </div>
+          <p id="roadmap-long-text" style="color: rgba(255,255,255,0.85); font-size: 0.9rem; line-height: 1.6; margin: 0;">載入中...</p>
+        </div>
       </div>
     </div>
 
@@ -262,6 +297,37 @@
       </div>
     </div>
 
+    <!-- 電商收益指標 Row -->
+    <div class="kpi-grid kpi-grid-3" style="margin-top:14px; margin-bottom:14px;">
+      <div class="kpi-card" onclick="openModal('modal-metric','總收益')">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <div class="kpi-label" style="margin-bottom:0">💵 總收益 (Revenue)</div>
+          <div class="icon-badge-circle green"><i class="ti ti-cash"></i></div>
+        </div>
+        <div class="kpi-value" data-key="ecommerce_revenue">$0</div>
+        <div class="kpi-delta up">↑ +14.2%</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:75%;background:var(--success)"></div></div>
+      </div>
+      <div class="kpi-card" onclick="openModal('modal-metric','客單價')">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <div class="kpi-label" style="margin-bottom:0">🛍️ 客單價 (AOV)</div>
+          <div class="icon-badge-circle orange"><i class="ti ti-shopping-cart"></i></div>
+        </div>
+        <div class="kpi-value" data-key="ecommerce_aov">$0</div>
+        <div class="kpi-delta up">↑ +2.1%</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:60%;background:var(--warning)"></div></div>
+      </div>
+      <div class="kpi-card" onclick="openModal('modal-metric','加入購物車數')">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <div class="kpi-label" style="margin-bottom:0">🛒 加入購物車數 (Cart Additions)</div>
+          <div class="icon-badge-circle violet"><i class="ti ti-basket"></i></div>
+        </div>
+        <div class="kpi-value" data-key="ecommerce_cart">0</div>
+        <div class="kpi-delta up">↑ +8.9%</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:68%;background:var(--accent)"></div></div>
+      </div>
+    </div>
+
     <div class="chart-grid">
       <div class="card">
         <div class="card-header">
@@ -285,20 +351,49 @@
       </div>
     </div>
 
-    <!-- GA4 轉化漏斗分析 -->
-    <div class="card" style="margin-bottom:14px">
-      <div class="card-header">
-        <div>
-          <div class="card-title">🛒 網站電商轉化漏斗分析 (Funnel Analytics)</div>
-          <div class="card-sub">追蹤用戶從造訪到最終購買的流失率與轉化成效，精準識別流失環節</div>
+    <!-- GA4 轉化漏斗與受眾輪廓 (並排顯示) -->
+    <div class="chart-grid" style="margin-bottom:14px">
+      <!-- Funnel Card -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🛒 網站電商轉化漏斗分析 (Funnel Analytics)</div>
+            <div class="card-sub">追蹤用戶從造訪到最終購買的流失率與轉化成效，精準識別流失環節</div>
+          </div>
+        </div>
+        <div class="funnel-container" id="ga4-funnel-container">
+          <!-- 由 JS 動態渲染 -->
         </div>
       </div>
-      <div class="funnel-container" id="ga4-funnel-container">
-        <!-- 由 JS 動態渲染 -->
+      <!-- Demographics Card -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">👥 受眾屬性與地理分佈 (Audience Profile)</div>
+            <div class="card-sub">分析網站造訪者的年齡、性別比例與熱門城市分佈</div>
+          </div>
+        </div>
+        <div style="padding: 16px; display: flex; flex-direction: column; gap: 14px;">
+          <div>
+            <div style="font-size: 11px; font-weight: 600; margin-bottom: 6px; color: var(--text-primary);">年齡分佈 (Age Group)</div>
+            <div id="demographics-age-bars" style="display: flex; flex-direction: column; gap: 8px;"></div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 6px;">
+            <div>
+              <div style="font-size: 11px; font-weight: 600; margin-bottom: 6px; color: var(--text-primary);">性別比例 (Gender)</div>
+              <div id="demographics-gender-bars" style="display: flex; flex-direction: column; gap: 6px;"></div>
+            </div>
+            <div>
+              <div style="font-size: 11px; font-weight: 600; margin-bottom: 6px; color: var(--text-primary);">熱門城市 (Top Cities)</div>
+              <div id="demographics-city-bars" style="display: flex; flex-direction: column; gap: 6px;"></div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="card">
+    <!-- 所有頁面完整報表 -->
+    <div class="card" style="margin-bottom:14px">
       <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
         <div>
           <div class="card-title">所有頁面完整報表</div>
@@ -323,6 +418,90 @@
           </thead>
           <tbody id="pages-tbody"></tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- 熱門商品銷售排行 -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header">
+        <div>
+          <div class="card-title">📦 熱門商品銷售排行 (Top Selling Products)</div>
+          <div class="card-sub">電子商務商品之瀏覽次數、加購物車數、實際交易件數與產生的總收益</div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>商品名稱</th>
+              <th class="num">商品瀏覽量</th>
+              <th class="num">加入購物車</th>
+              <th class="num">購買件數</th>
+              <th class="num">轉換率 (CR)</th>
+              <th class="num">總收益 (Revenue)</th>
+            </tr>
+          </thead>
+          <tbody id="products-tbody">
+            <!-- JS 動態載入 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 數據健康度與自訂事件微轉換 -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔍 GA4 數據追蹤品質審計 (Data Health Quality)</div>
+          <div class="card-sub">監測異常流量來源，若 (not set) 流量過高將提出警告</div>
+        </div>
+        <div style="padding: 16px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <div style="font-size: 0.95rem; color: rgba(255,255,255,0.7);">未指明流量來源比例 ((not set) / Unassigned)</div>
+            <div id="data-quality-badge" class="badge-status good" style="font-weight: 600; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; background: rgba(16,185,129,0.15); color: var(--success);">優良 (0%)</div>
+          </div>
+          <div class="progress-bar-container" style="background: rgba(255,255,255,0.06); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 12px;">
+            <div id="data-quality-progress" style="width: 0%; height: 100%; background: var(--success); transition: width 0.3s;"></div>
+          </div>
+          <p id="data-quality-warning-msg" style="font-size: 0.85rem; color: rgba(255,255,255,0.6); line-height: 1.5; margin: 0;">
+            目前未指明流量比例處於健康區間 (< 5%)，這代表您的 UTM 參數與管道標籤設定相當完善。
+          </p>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🎯 重要自訂事件微轉換 (Micro-Conversions)</div>
+          <div class="card-sub">追蹤電商漏斗以外的自訂關鍵互動指標</div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>事件名稱</th>
+                <th class="num">觸發次數</th>
+                <th class="num">事件佔比</th>
+              </tr>
+            </thead>
+            <tbody id="custom-events-tbody">
+              <tr>
+                <td>line_click (LINE 諮詢點擊)</td>
+                <td class="num" id="custom-line-clicks">0</td>
+                <td class="num" id="custom-line-pct">—</td>
+              </tr>
+              <tr>
+                <td>form_submit (表單提交數)</td>
+                <td class="num" id="custom-form-submits">0</td>
+                <td class="num" id="custom-form-pct">—</td>
+              </tr>
+              <tr>
+                <td>phone_click (電話撥打點擊)</td>
+                <td class="num" id="custom-phone-clicks">0</td>
+                <td class="num" id="custom-phone-pct">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -378,6 +557,43 @@
           <span class="legend-item"><span class="legend-sq" style="background:var(--accent)"></span>網頁 83%</span>
           <span class="legend-item"><span class="legend-sq" style="background:#6b7280"></span>圖片 10%</span>
           <span class="legend-item"><span class="legend-sq" style="background:#d1d5db"></span>影片 7%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 技術與體驗健康度 (Core Web Vitals) -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header">
+        <div>
+          <div class="card-title">⚡ 網頁技術體驗與核心指標 (Core Web Vitals)</div>
+          <div class="card-sub">評估網站的加載速度、互動性、版面穩定度，以及行動裝置適用度與索引狀態</div>
+        </div>
+      </div>
+      <div style="padding: 16px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; text-align: center;">
+        <div style="background: var(--bg); padding: 12px; border-radius: var(--radius-md);">
+          <div style="font-size: 10px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">LCP (最大內容繪製)</div>
+          <div style="font-size: 18px; font-weight: 700; color: var(--success);" id="cwv-lcp-val">1.8s</div>
+          <div style="font-size: 9px; color: var(--success); font-weight: 600; margin-top: 4px;"><span class="badge badge-green" style="padding: 1px 6px;">優良</span></div>
+        </div>
+        <div style="background: var(--bg); padding: 12px; border-radius: var(--radius-md);">
+          <div style="font-size: 10px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">INP (互動體驗時間)</div>
+          <div style="font-size: 18px; font-weight: 700; color: var(--success);" id="cwv-inp-val">120ms</div>
+          <div style="font-size: 9px; color: var(--success); font-weight: 600; margin-top: 4px;"><span class="badge badge-green" style="padding: 1px 6px;">優良</span></div>
+        </div>
+        <div style="background: var(--bg); padding: 12px; border-radius: var(--radius-md);">
+          <div style="font-size: 10px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">CLS (版面移動時間)</div>
+          <div style="font-size: 18px; font-weight: 700; color: var(--success);" id="cwv-cls-val">0.08</div>
+          <div style="font-size: 9px; color: var(--success); font-weight: 600; margin-top: 4px;"><span class="badge badge-green" style="padding: 1px 6px;">優良</span></div>
+        </div>
+        <div style="background: var(--bg); padding: 12px; border-radius: var(--radius-md);">
+          <div style="font-size: 10px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">行動裝置可用性</div>
+          <div style="font-size: 18px; font-weight: 700; color: var(--success);" id="cwv-mobile-val">98%</div>
+          <div style="font-size: 9px; color: var(--success); font-weight: 600; margin-top: 4px;"><span class="badge badge-green" style="padding: 1px 6px;">相容</span></div>
+        </div>
+        <div style="background: var(--bg); padding: 12px; border-radius: var(--radius-md);">
+          <div style="font-size: 10px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">網頁索引涵蓋率</div>
+          <div style="font-size: 18px; font-weight: 700; color: var(--warning);" id="cwv-index-val">85%</div>
+          <div style="font-size: 9px; color: var(--warning); font-weight: 600; margin-top: 4px;"><span class="badge badge-yellow" style="padding: 1px 6px;">待優化</span></div>
         </div>
       </div>
     </div>
@@ -541,6 +757,36 @@
             <!-- 由 JS 動態渲染 -->
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- 影音廣告素材指標 -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header">
+        <div>
+          <div class="card-title">🎬 影音素材成效與鉤子指標 (Video Creative Analytics)</div>
+          <div class="card-sub">分析影片的前幾秒是否能成功抓住眼球，以及各進度節點的流存率與點閱效果</div>
+        </div>
+      </div>
+      <div style="padding: 16px; display: grid; grid-template-columns: 240px 1fr; gap: 20px;">
+        <div style="background: var(--bg); padding: 14px; border-radius: var(--radius-md); display: flex; flex-direction: column; justify-content: center; gap: 14px;">
+          <div>
+            <div style="font-size: 10px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">🪝 3秒鉤子率 (Hook Rate)</div>
+            <div style="font-size: 22px; font-weight: 700; color: var(--accent);" id="video-hook-val">62.4%</div>
+            <div style="font-size: 9px; color: var(--text-secondary); margin-top: 2px;">(觀看達 3 秒人數 / 總曝光數)</div>
+          </div>
+          <div>
+            <div style="font-size: 10px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">🛡️ 留存率 (Hold Rate)</div>
+            <div style="font-size: 22px; font-weight: 700; color: var(--success);" id="video-hold-val">38.2%</div>
+            <div style="font-size: 9px; color: var(--text-secondary); margin-top: 2px;">(觀看達 15 秒或完看數 / 點擊數)</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size: 11px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">影片觀看進度節點 (Video Watch Progress)</div>
+          <div id="video-progress-bars" style="display: flex; flex-direction: column; gap: 10px;">
+            <!-- 由 JS 動態渲染 -->
+          </div>
+        </div>
       </div>
     </div>
 
@@ -711,9 +957,135 @@
   </main>
 
   <!-- ═══════════════════════════════════════════
-       PAGE 5：串接教學
+       PAGE 5：社群媒體經營與互動 (Social Media)
   ═══════════════════════════════════════════ -->
   <main class="page" id="p5" role="tabpanel">
+
+    <div class="kpi-grid kpi-grid-4">
+      <div class="kpi-card" onclick="openModal('modal-metric','粉絲人數')">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <div class="kpi-label" style="margin-bottom:0">👥 粉絲總人數</div>
+          <div class="icon-badge-circle violet"><i class="ti ti-users"></i></div>
+        </div>
+        <div class="kpi-value" id="soc-followers-val">18,240</div>
+        <div class="kpi-delta up" id="soc-followers-delta">↑ +450</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:75%;background:var(--accent)"></div></div>
+      </div>
+      <div class="kpi-card" onclick="openModal('modal-metric','社群觸及')">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <div class="kpi-label" style="margin-bottom:0">📢 非追蹤者觸及比例</div>
+          <div class="icon-badge-circle green"><i class="ti ti-broadcast"></i></div>
+        </div>
+        <div class="kpi-value" id="soc-reach-val">55.0%</div>
+        <div class="kpi-delta up" id="soc-reach-delta">↑ +12.4% 破圈率</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:55%;background:var(--success)"></div></div>
+      </div>
+      <div class="kpi-card" onclick="openModal('modal-metric','互動總數')">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <div class="kpi-label" style="margin-bottom:0">❤️ 內容互動總數</div>
+          <div class="icon-badge-circle orange"><i class="ti ti-heart"></i></div>
+        </div>
+        <div class="kpi-value" id="soc-eng-val">2,060</div>
+        <div class="kpi-delta up" id="soc-eng-delta">↑ +8.4%</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:64%;background:var(--warning)"></div></div>
+      </div>
+      <div class="kpi-card" onclick="openModal('modal-metric','平均互動率')">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <div class="kpi-label" style="margin-bottom:0">📊 平均互動率 (ER)</div>
+          <div class="icon-badge-circle red"><i class="ti ti-chart-bar"></i></div>
+        </div>
+        <div class="kpi-value" id="soc-er-val">5.12%</div>
+        <div class="kpi-delta flat" id="soc-er-delta">— 持平</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:51%;background:var(--muted)"></div></div>
+      </div>
+    </div>
+
+    <!-- 平台數據與細項指標 -->
+    <div class="grid-2col" style="margin-bottom: 14px;">
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">觸及受眾來源 (Reach Breakdown)</div><div class="card-sub">追蹤者 vs 非追蹤者 (內容破圈擴散力)</div></div>
+        </div>
+        <div style="padding: 16px; display: flex; flex-direction: column; gap: 14px;">
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px;">
+              <span style="color:var(--text-secondary)">非追蹤者觸及人數 (Non-followers)</span>
+              <span style="font-weight:600;color:var(--accent)" id="soc-non-followers-pct">55%</span>
+            </div>
+            <div class="kpi-bar" style="height:8px"><div class="kpi-bar-fill" id="soc-non-followers-bar" style="width:55%;background:var(--accent)"></div></div>
+          </div>
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px;">
+              <span style="color:var(--text-secondary)">追蹤者觸及人數 (Followers)</span>
+              <span style="font-weight:600;color:var(--text-primary)" id="soc-followers-pct">45%</span>
+            </div>
+            <div class="kpi-bar" style="height:8px"><div class="kpi-bar-fill" id="soc-followers-bar" style="width:45%;background:#93c5fd"></div></div>
+          </div>
+          <div style="font-size: 10px; color: var(--text-secondary); line-height: 1.4; margin-top: 6px; padding: 8px; background: var(--bg); border-radius: var(--radius-sm);">
+            💡 <strong>分析師診斷</strong>：非追蹤者觸及比例大於 50%，代表本月產出的內容具備強大的擴散與破圈能力，適合持續產出同類素材以引流新粉。
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">內容互動質量指標 (Engagement Types)</div><div class="card-sub">評估受眾的偏好深度與品牌信任度</div></div>
+        </div>
+        <div style="padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: center;">
+          <div style="background: var(--bg); padding: 8px; border-radius: var(--radius-sm);">
+            <div style="font-size: 9px; color: var(--text-secondary);">按讚 Reactions</div>
+            <div style="font-size: 14px; font-weight: 600; margin-top: 2px;" id="soc-like-val">0</div>
+          </div>
+          <div style="background: var(--bg); padding: 8px; border-radius: var(--radius-sm);">
+            <div style="font-size: 9px; color: var(--text-secondary);">留言 Comments</div>
+            <div style="font-size: 14px; font-weight: 600; margin-top: 2px;" id="soc-comment-val">0</div>
+          </div>
+          <div style="background: var(--bg); padding: 8px; border-radius: var(--radius-sm);">
+            <div style="font-size: 9px; color: var(--text-secondary);">分享 Shares</div>
+            <div style="font-size: 14px; font-weight: 600; margin-top: 2px; color: var(--accent)" id="soc-share-val">0</div>
+          </div>
+          <div style="background: var(--bg); padding: 8px; border-radius: var(--radius-sm);">
+            <div style="font-size: 9px; color: var(--text-secondary);">儲存 Saves</div>
+            <div style="font-size: 14px; font-weight: 600; margin-top: 2px; color: var(--success)" id="soc-save-val">0</div>
+          </div>
+        </div>
+        <div style="margin: 0 16px 16px 16px; font-size: 10px; color: var(--text-secondary);">
+          * 分享數代表擴散價值，留言與儲存數則代表受眾深度興趣與高度品牌認同。
+        </div>
+      </div>
+    </div>
+
+    <!-- 熱門社群貼文分析 -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header">
+        <div>
+          <div class="card-title">🔥 熱門社群貼文排行與成效分析</div>
+          <div class="card-sub">評估不同素材與文案主題的實際觸及、分享次數與加權互動率 (ER)</div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 45%;">貼文內容摘要</th>
+              <th>類型</th>
+              <th class="num">觸及人數</th>
+              <th class="num">分享數</th>
+              <th class="num">互動率 (ER)</th>
+            </tr>
+          </thead>
+          <tbody id="social-tbody">
+            <!-- JS 動態渲染 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════
+       PAGE 6：串接教學
+  ═══════════════════════════════════════════ -->
+  <main class="page" id="p6" role="tabpanel">
 
     <div class="notice-bar" role="alert">
       <i class="ti ti-info-circle" aria-hidden="true"></i>
@@ -738,6 +1110,139 @@
   </main>
 
   <!-- ═══════════════════════════════════════════
+       PAGE 7：市場與競品情報
+  ═══════════════════════════════════════════ -->
+  <main class="page" id="p7" role="tabpanel">
+    <!-- 競品管理與控制面板 -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div class="card-title">🔍 市場競品控制面板 (Competitor Intelligence Controller)</div>
+          <div class="card-sub">新增直接與間接競爭對手，一鍵發動全管道數據採集與商業情報對抗分析</div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-primary" onclick="openAddCompetitorModal()"><i class="ti ti-plus"></i> 新增對手網域</button>
+          <button class="btn-secondary" onclick="triggerCompetitorFetchAll()" id="fetch-all-competitors-btn"><i class="ti ti-refresh"></i> 發動全數據抓取</button>
+          <button class="btn-secondary" onclick="downloadCompetitorReport()"><i class="ti ti-download"></i> 匯出 PDF 決策報告</button>
+        </div>
+      </div>
+      <div style="padding: 16px; display: flex; flex-wrap: wrap; gap: 12px;" id="competitor-chips-container">
+        <!-- JS 動態載入競品網域標籤 -->
+      </div>
+    </div>
+
+    <!-- SWOT 分析與波特五力雷達 -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+      <!-- SWOT 四象限 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🚀 SWOT 競爭對抗矩陣 (AI SWOT Grid)</div>
+          <div class="card-sub">AI 根據雙方流量、曝光率與社群好評率自動生成的對抗優劣勢</div>
+        </div>
+        <div style="padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;" id="swot-container">
+          <div class="swot-box s-box" style="background: rgba(16,185,129,0.04); border: 1px solid rgba(16,185,129,0.15); padding: 12px; border-radius: 8px;">
+            <div style="font-weight: 600; color: var(--success); margin-bottom: 8px; font-size: 0.95rem;">Strengths 優勢</div>
+            <ul id="swot-s-list" style="padding-left: 16px; margin: 0; font-size: 0.85rem; color: #1F2937; line-height: 1.6;">
+              <li>載入中...</li>
+            </ul>
+          </div>
+          <div class="swot-box w-box" style="background: rgba(239,68,68,0.04); border: 1px solid rgba(239,68,68,0.15); padding: 12px; border-radius: 8px;">
+            <div style="font-weight: 600; color: var(--danger); margin-bottom: 8px; font-size: 0.95rem;">Weaknesses 劣勢</div>
+            <ul id="swot-w-list" style="padding-left: 16px; margin: 0; font-size: 0.85rem; color: #1F2937; line-height: 1.6;">
+              <li>載入中...</li>
+            </ul>
+          </div>
+          <div class="swot-box o-box" style="background: rgba(37,99,235,0.04); border: 1px solid rgba(37,99,235,0.15); padding: 12px; border-radius: 8px;">
+            <div style="font-weight: 600; color: var(--accent); margin-bottom: 8px; font-size: 0.95rem;">Opportunities 機會</div>
+            <ul id="swot-o-list" style="padding-left: 16px; margin: 0; font-size: 0.85rem; color: #1F2937; line-height: 1.6;">
+              <li>載入中...</li>
+            </ul>
+          </div>
+          <div class="swot-box t-box" style="background: rgba(245,158,11,0.04); border: 1px solid rgba(245,158,11,0.15); padding: 12px; border-radius: 8px;">
+            <div style="font-weight: 600; color: var(--warning); margin-bottom: 8px; font-size: 0.95rem;">Threats 威脅</div>
+            <ul id="swot-t-list" style="padding-left: 16px; margin: 0; font-size: 0.85rem; color: #1F2937; line-height: 1.6;">
+              <li>載入中...</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- 波特五力雷達 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🕸️ 波特五力市場雷達 (Porter's Five Forces Radar)</div>
+          <div class="card-sub">評估市場競爭強度、威脅壁壘與定價談判權力</div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; padding: 16px; gap: 12px; align-items: center;">
+          <div id="porter-radar-chart" style="width: 100%; height: 260px;"></div>
+          <div id="porter-notes-container" style="font-size: 0.85rem; color: var(--text-primary); line-height: 1.6;">
+            <!-- JS 動態載入五力評語 -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 市場定位氣泡圖 -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div class="card-title">🎈 競爭廠商市場定位分布圖 (Market Positioning Bubble Map)</div>
+          <div class="card-sub">自主選擇二維度交叉分析，氣泡大小代表網站月訪客規模</div>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <span style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">X 軸：</span>
+          <select id="positioning-x-axis" class="input-select" onchange="renderPositioningMap()" style="padding: 4px; background: rgba(255,255,255,0.06); color: white; border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; font-size: 0.85rem;">
+            <option value="traffic">月訪客流量</option>
+            <option value="seo_keywords" selected>SEO 關鍵字數</option>
+            <option value="social_posts">社群討論聲量</option>
+            <option value="sentiment">社群正面好評率</option>
+            <option value="geo_mention">AI 搜尋提及率</option>
+          </select>
+          <span style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-left: 8px;">Y 軸：</span>
+          <select id="positioning-y-axis" class="input-select" onchange="renderPositioningMap()" style="padding: 4px; background: rgba(255,255,255,0.06); color: white; border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; font-size: 0.85rem;">
+            <option value="traffic">月訪客流量</option>
+            <option value="seo_keywords">SEO 關鍵字數</option>
+            <option value="social_posts">社群討論聲量</option>
+            <option value="sentiment">社群正面好評率</option>
+            <option value="geo_mention" selected>AI 搜尋提及率</option>
+          </select>
+        </div>
+      </div>
+      <div style="padding: 16px;">
+        <div id="positioning-bubble-chart" style="width: 100%; height: 350px;"></div>
+      </div>
+    </div>
+
+    <!-- 競爭情報矩陣表 -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header">
+        <div class="card-title">📊 競爭廠商綜合對照矩陣 (Comparison Matrix Table)</div>
+        <div class="card-sub">跨渠道核心數據（Traffic, SEO, Social, GEO）全維度橫向大對比</div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>品牌廠商</th>
+              <th>網域</th>
+              <th>類型</th>
+              <th class="num">月訪問量</th>
+              <th class="num">跳出率</th>
+              <th class="num">SEO 關鍵字</th>
+              <th class="num">社群貼文</th>
+              <th class="num">好評率</th>
+              <th class="num">AI 提及率</th>
+            </tr>
+          </thead>
+          <tbody id="competitor-matrix-tbody">
+            <!-- JS 動態載入 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- ═══════════════════════════════════════════
        MODALS
   ═══════════════════════════════════════════ -->
 
@@ -759,6 +1264,38 @@
           <div class="insight-box-label">AI 建議</div>
           <p class="insight-box-text" id="mp-ai">分析中...</p>
           <button class="ai-act-btn" id="mp-ai-btn">深入分析 ↗</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal：新增競品對手 -->
+  <div class="modal-bg" id="modal-add-competitor" onclick="closeOnBg(event,'modal-add-competitor')" role="dialog" aria-modal="true" aria-labelledby="mac-title">
+    <div class="modal">
+      <div class="modal-head">
+        <h2 class="modal-title" id="mac-title">新增競爭廠商網域</h2>
+        <button class="modal-close" onclick="closeModal('modal-add-competitor')" aria-label="關閉">×</button>
+      </div>
+      <div class="modal-body" style="padding-top: 10px;">
+        <div style="margin-bottom: 12px;">
+          <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px;">廠商名稱</label>
+          <input type="text" id="comp-input-name" class="input-text" placeholder="例如：伯堅儀器股份有限公司" style="width: 100%; padding: 10px; background: #F3F4F6; border: 1px solid var(--border-mid); border-radius: 6px; color: var(--text-primary); outline: none;">
+        </div>
+        <div style="margin-bottom: 12px;">
+          <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px;">官方網域 (Domain)</label>
+          <input type="text" id="comp-input-domain" class="input-text" placeholder="例如：www.competitor.com" style="width: 100%; padding: 10px; background: #F3F4F6; border: 1px solid var(--border-mid); border-radius: 6px; color: var(--text-primary); outline: none;">
+        </div>
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px;">競爭類型</label>
+          <select id="comp-input-type" class="input-select" style="width: 100%; padding: 10px; background: #F3F4F6; border: 1px solid var(--border-mid); border-radius: 6px; color: var(--text-primary); outline: none;">
+            <option value="direct">直接競品 (Direct)</option>
+            <option value="indirect">間接競品 (Indirect)</option>
+            <option value="benchmark">業界標竿 (Benchmark)</option>
+          </select>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 8px;">
+          <button class="btn-secondary" onclick="closeModal('modal-add-competitor')">取消</button>
+          <button class="btn-primary" onclick="submitAddCompetitor()">提交保存</button>
         </div>
       </div>
     </div>
@@ -958,7 +1495,9 @@
 
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- ECharts CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
   <!-- 主邏輯 -->
-  <script src="dashboard.js?v=3"></script>
+  <script src="dashboard.js?v=6"></script>
 </body>
 </html>

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>線下實地市調輸入表單 | Competitive Intelligence</title>
+  <!-- Google Fonts & Tailwind (for simple forms) or pure CSS -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <style>
+    :root {
+      --bg: #0A0F1E;
+      --card-bg: rgba(255, 255, 255, 0.03);
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #F3F4F6;
+      --text-muted: rgba(255, 255, 255, 0.6);
+      --accent: #00D4FF;
+      --success: #10B981;
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', 'Noto Sans TC', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(16px);
+      padding: 24px;
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #FFF;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    p.sub {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .input-text, .input-select, .textarea {
+      width: 100%;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: white;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .input-text:focus, .input-select:focus, .textarea:focus {
+      border-color: var(--accent);
+    }
+
+    .rating-container {
+      display: flex;
+      gap: 12px;
+      margin-top: 4px;
+    }
+
+    .rating-btn {
+      flex: 1;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .rating-btn.active {
+      background: var(--accent);
+      color: #0A0F1E;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+    }
+
+    .photo-upload-box {
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 30px 10px;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+      background: rgba(255, 255, 255, 0.02);
+      transition: all 0.2s;
+    }
+
+    .photo-upload-box:hover {
+      border-color: var(--accent);
+      background: rgba(0, 212, 255, 0.02);
+    }
+
+    .photo-upload-box i {
+      font-size: 2rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .photo-preview {
+      max-width: 100%;
+      max-height: 180px;
+      margin-top: 10px;
+      border-radius: 6px;
+      display: none;
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 12px;
+      background: var(--accent);
+      color: #0A0F1E;
+      border: none;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+      margin-top: 24px;
+    }
+
+    .btn-submit:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    #success-card {
+      display: none;
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    #success-card i {
+      font-size: 3rem;
+      color: var(--success);
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div id="form-card">
+      <h1><i class="ti ti-map-pin"></i> 線下實地市調表單</h1>
+      <p class="sub">填寫線下通路考察數據，將實體指標同步併入競品矩陣</p>
+
+      <form id="survey-form" onsubmit="submitForm(event)">
+        <div class="form-group">
+          <label for="select-project">選擇競品分析專案</label>
+          <select id="select-project" class="input-select" onchange="loadCompetitors(this.value)" required>
+            <option value="">載入中...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="select-competitor">市調對手品牌</label>
+          <select id="select-competitor" class="input-select" required>
+            <option value="">請先選擇專案</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="surveyor-name">考察人員姓名</label>
+          <input type="text" id="surveyor-name" class="input-text" placeholder="例如：張大同" required>
+        </div>
+
+        <div class="form-group">
+          <label for="survey-location">考察門市/地點</label>
+          <input type="text" id="survey-location" class="input-text" placeholder="例如：台北SOGO復興館專櫃" required>
+        </div>
+
+        <div class="form-group">
+          <label>客流量熱度 (1-5)</label>
+          <div class="rating-container">
+            <button type="button" class="rating-btn" onclick="setRating(1)">1</button>
+            <button type="button" class="rating-btn" onclick="setRating(2)">2</button>
+            <button type="button" class="rating-btn" onclick="setRating(3)">3</button>
+            <button type="button" class="rating-btn" onclick="setRating(4)">4</button>
+            <button type="button" class="rating-btn" onclick="setRating(5)">5</button>
+          </div>
+          <input type="hidden" id="traffic-rating" required>
+        </div>
+
+        <div class="form-group">
+          <label for="display-notes">產品陳列與現場筆記</label>
+          <textarea id="display-notes" class="textarea" rows="4" placeholder="例如：競品將主力商品放置在展櫃中心，現場有買一送一的看板宣傳..." required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>現場考察照片</label>
+          <div class="photo-upload-box" onclick="triggerFileInput()">
+            <i class="ti ti-camera"></i>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">點擊拍照或上傳現場照片</p>
+            <input type="file" id="file-input" style="display:none;" accept="image/*" onchange="previewImage(event)">
+            <img id="image-preview" class="photo-preview" src="" alt="預覽">
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit">
+          <i class="ti ti-device-floppy"></i> 提交保存數據
+        </button>
+      </form>
+    </div>
+
+    <div id="success-card">
+      <i class="ti ti-circle-check"></i>
+      <h2>🎉 提交成功！</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 8px; margin-bottom: 24px;">數據已成功寫入資料庫，並併入系統決策矩陣中。</p>
+      <button class="btn-submit" onclick="resetForm()" style="background: rgba(255,255,255,0.06); color: white;">
+        <i class="ti ti-plus"></i> 再填寫一筆
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "http://localhost:8000/api";
+    let selectedRating = 0;
+    let photoBase64 = "";
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadProjects();
+    });
+
+    async function loadProjects() {
+      try {
+        const r = await fetch(`${API_BASE}/projects`);
+        const projects = await r.json();
+        const sel = document.getElementById("select-project");
+        sel.innerHTML = '<option value="">請選擇專案...</option>' + 
+          projects.map(p => `<option value="${p.id}">${p.name} (${p.industry})</option>`).join("");
+      } catch (e) {
+        console.error("Failed to load projects", e);
+      }
+    }
+
+    async function loadCompetitors(projectId) {
+      if (!projectId) return;
+      try {
+        const r = await fetch(`${API_BASE}/projects/${projectId}/competitors`);
+        const competitors = await r.json();
+        const sel = document.getElementById("select-competitor");
+        sel.innerHTML = '<option value="">請選擇品牌對手...</option>' + 
+          competitors.map(c => `<option value="${c.id}">${c.name} (${c.domain})</option>`).join("");
+      } catch (e) {
+        console.error("Failed to load competitors", e);
+      }
+    }
+
+    function setRating(val) {
+      selectedRating = val;
+      document.getElementById("traffic-rating").value = val;
+      document.querySelectorAll(".rating-btn").forEach((btn, idx) => {
+        if (idx + 1 === val) {
+          btn.classList.add("active");
+        } else {
+          btn.classList.remove("active");
+        }
+      });
+    }
+
+    function triggerFileInput() {
+      document.getElementById("file-input").click();
+    }
+
+    function previewImage(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        photoBase64 = e.target.result;
+        const img = document.getElementById("image-preview");
+        img.src = photoBase64;
+        img.style.display = "block";
+      }
+      reader.readAsDataURL(file);
+    }
+
+    async function submitForm(e) {
+      e.preventDefault();
+      
+      const payload = {
+        competitor_id: document.getElementById("select-competitor").value,
+        surveyor: document.getElementById("surveyor-name").value,
+        location: document.getElementById("survey-location").value,
+        foot_traffic_score: parseInt(selectedRating),
+        product_display_notes: document.getElementById("display-notes").value,
+        photo_base64: photoBase64
+      };
+
+      try {
+        const r = await fetch(`${API_BASE}/field-survey`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(payload)
+        });
+        
+        if (r.ok) {
+          document.getElementById("form-card").style.display = "none";
+          document.getElementById("success-card").style.display = "block";
+        } else {
+          alert("提交失敗，請檢查輸入內容是否完整。");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("網路連線錯誤，無法送出表單。");
+      }
+    }
+
+    function resetForm() {
+      document.getElementById("survey-form").reset();
+      selectedRating = 0;
+      photoBase64 = "";
+      document.getElementById("image-preview").style.display = "none";
+      document.getElementById("image-preview").src = "";
+      document.querySelectorAll(".rating-btn").forEach(btn => btn.classList.remove("active"));
+      
+      document.getElementById("success-card").style.display = "none";
+      document.getElementById("form-card").style.display = "block";
+    }
+  </script>
+</body>
+</html>

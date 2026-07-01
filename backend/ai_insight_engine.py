@@ -10,10 +10,11 @@ from openai import OpenAI
 
 import time
 
-def call_gemini(prompt: str, api_key: str, max_tokens: int = 800) -> str:
+def call_gemini(prompt: str, api_key: str, max_tokens: int = 800, enable_grounding: bool = False) -> str:
     """呼叫 Google Gemini Flash API，並包含自動重試機制以因應 503/429 等暫時性錯誤"""
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={api_key}"
     headers = {"Content-Type": "application/json"}
+    
     payload = {
         "contents": [
             {"parts": [{"text": prompt}]}
@@ -24,11 +25,14 @@ def call_gemini(prompt: str, api_key: str, max_tokens: int = 800) -> str:
         }
     }
     
+    if enable_grounding:
+        payload["tools"] = [{"googleSearch": {}}]
+    
     max_retries = 3
     backoff = 1.5
     for attempt in range(max_retries):
         try:
-            with httpx.Client(timeout=30.0) as client:
+            with httpx.Client(timeout=45.0) as client:
                 resp = client.post(url, headers=headers, json=payload)
             
             # 如果是 503 或 429 這種暫時性或限流錯誤，進行重試
@@ -135,3 +139,61 @@ def generate_chat_reply(user_prompt: str, context_data: dict, openai_key: str = 
         return response.choices[0].message.content.strip()
     else:
         raise ValueError("需要提供 openai_key 或 gemini_key")
+
+
+def generate_action_roadmap(ga4_data: dict, openai_key: str = "", gemini_key: str = "") -> dict:
+    """
+    Generate short, medium, and long-term marketing action roadmap based on GA4 metrics.
+    Returns: {"short_term": "...", "medium_term": "...", "long_term": "..."}
+    """
+    overview  = ga4_data.get("overview", {})
+    pages     = ga4_data.get("top_pages", [])[:5]
+    sources   = ga4_data.get("traffic_sources", [])
+
+    prompt = f"""
+    你是一位專業的行銷策略專家。請根據以下數據，制定三個階段的「行動決策指南」：
+    1. 短期戰術 (1-30天)：立即可優化、修復或調配預算的事項。
+    2. 中期規劃 (30-90天)：SEO結構調整、網頁轉換率優化 (CRO) 等。
+    3. 長期戰略 (90天以上)：品牌布局、新客群開發、AI 搜尋能見度 (GEO) 等。
+    
+    【核心數據】
+    - 工作階段：{overview.get('sessions', '—')}，較上期 {overview.get('sessions_delta', '—')}
+    - 不重複用戶：{overview.get('users', '—')}，較上期 {overview.get('users_delta', '—')}
+    - 平均停留時間：{overview.get('avg_duration', '—')}
+    - 跳出率：{overview.get('bounce_rate', '—')}
+    - 轉換率：{overview.get('conversions', '—')}
+    
+    請以繁體中文回答，並嚴格以下列 JSON 格式回傳，不可有任何 ```json 等 Markdown 包裹：
+    {{
+        "short_term": "短期建議內容（可用 <strong> 粗體標示關鍵字，約 50-80 字）",
+        "medium_term": "中期建議內容（約 50-80 字）",
+        "long_term": "長期建議內容（約 50-80 字）"
+    }}
+    """
+    
+    try:
+        if gemini_key:
+            res = call_gemini(prompt, gemini_key, max_tokens=1000)
+            clean = res.replace("```json", "").replace("```", "").strip()
+            return json.loads(clean)
+        elif openai_key:
+            client = OpenAI(api_key=openai_key)
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=600,
+                temperature=0.7,
+            )
+            clean = response.choices[0].message.content.strip().replace("```json", "").replace("```", "").strip()
+            return json.loads(clean)
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in generate_action_roadmap: {e}")
+        
+    # Return structured heuristics if failed or no key
+    return {
+        "short_term": "<strong>調整低 ROAS 廣告預算</strong>：將本週成效較低的付費廣告預算轉移至高點閱率 (CTR) 的渠道，並立即修復高跳出率頁面的 CTA 按鈕。",
+        "medium_term": "<strong>進行關鍵字 Topic Cluster 優化</strong>：針對 GSC 曝光高但點擊低的潛力長尾字詞撰寫專題內容，並優化產品導購流程，降低購物車流失率。",
+        "long_term": "<strong>布局 AI 搜尋能見度 (GEO)</strong>：強化網站的 JSON-LD 結構化資料，爭取在 Google AIO 與 ChatGPT 推薦清單中被引用，建立長期自然增長壁壘。"
+    }
+

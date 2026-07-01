@@ -262,6 +262,157 @@ class GA4Client:
             for row in resp.rows
         ]
 
+
+    # ── 電商與商品數據 ────────────────────────────────
+    def get_ecommerce_overview(self, start_date: str = "30daysAgo", end_date: str = "today") -> dict:
+        """取得電商收益、客單價、購物車新增數"""
+        try:
+            req = RunReportRequest(
+                property=self.property_id,
+                date_ranges=[DateRange(start_date=start_date, end_date=end_date)],
+                metrics=[
+                    Metric(name="purchaseRevenue"),
+                    Metric(name="transactions"),
+                    Metric(name="addToCarts"),
+                ],
+            )
+            resp = self.client.run_report(req)
+            if resp.rows:
+                vals = [v.value for v in resp.rows[0].metric_values]
+                rev = float(vals[0])
+                trans = float(vals[1])
+                carts = int(float(vals[2]))
+                aov = rev / trans if trans > 0 else 0.0
+                return {"revenue": rev, "aov": aov, "cart_additions": carts}
+        except Exception as e:
+            print(f"[GA4Client] Fetch ecommerce failed: {e}")
+    def get_funnel_analytics(self, start_date: str = "30daysAgo", end_date: str = "today") -> dict:
+        """取得真實電商漏斗數據"""
+        try:
+            req = RunReportRequest(
+                property=self.property_id,
+                date_ranges=[DateRange(start_date=start_date, end_date=end_date)],
+                metrics=[
+                    Metric(name="sessions"),
+                    Metric(name="itemsViewed"),
+                    Metric(name="addToCarts"),
+                    Metric(name="checkouts"),
+                    Metric(name="transactions"),
+                ],
+            )
+            resp = self.client.run_report(req)
+            if resp.rows:
+                vals = [v.value for v in resp.rows[0].metric_values]
+                return {
+                    "sessions": int(float(vals[0])),
+                    "product_views": int(float(vals[1])),
+                    "add_to_cart": int(float(vals[2])),
+                    "checkouts": int(float(vals[3])),
+                    "purchases": int(float(vals[4]))
+                }
+        except Exception as e:
+            print(f"[GA4Client] Fetch funnel analytics failed: {e}")
+        return {
+            "sessions": 0,
+            "product_views": 0,
+            "add_to_cart": 0,
+            "checkouts": 0,
+            "purchases": 0
+        }
+
+    def get_top_products(self, start_date: str = "30daysAgo", end_date: str = "today", limit: int = 5) -> list:
+        """取得熱門商品銷售排行"""
+        try:
+            req = RunReportRequest(
+                property=self.property_id,
+                date_ranges=[DateRange(start_date=start_date, end_date=end_date)],
+                metrics=[
+                    Metric(name="itemsViewed"),
+                    Metric(name="itemsAddedToCart"),
+                    Metric(name="itemsPurchased"),
+                    Metric(name="itemRevenue"),
+                ],
+                dimensions=[Dimension(name="itemName")],
+                order_bys=[OrderBy(metric=OrderBy.MetricOrderBy(metric_name="itemRevenue"), desc=True)],
+                limit=limit
+            )
+            resp = self.client.run_report(req)
+            products = []
+            for row in resp.rows:
+                vals = row.metric_values
+                products.append({
+                    "name": row.dimension_values[0].value,
+                    "views": int(float(vals[0].value)),
+                    "cart": int(float(vals[1].value)),
+                    "buy": int(float(vals[2].value)),
+                    "rev": float(vals[3].value)
+                })
+            return products
+        except Exception as e:
+            print(f"[GA4Client] Fetch top products failed: {e}")
+        return []
+
+    # ── 受眾特徵 ────────────────────────────────────
+    def get_demographics(self, start_date: str = "30daysAgo", end_date: str = "today") -> dict:
+        """取得受眾年齡、性別、城市比例"""
+        age_list, gender_list, city_list = [], [], []
+        try:
+            # 1. 年齡
+            req_age = RunReportRequest(
+                property=self.property_id,
+                date_ranges=[DateRange(start_date=start_date, end_date=end_date)],
+                metrics=[Metric(name="sessions")],
+                dimensions=[Dimension(name="userAgeBracket")],
+                order_bys=[OrderBy(metric=OrderBy.MetricOrderBy(metric_name="sessions"), desc=True)]
+            )
+            resp_age = self.client.run_report(req_age)
+            total_age = sum(int(float(r.metric_values[0].value)) for r in resp_age.rows)
+            for row in resp_age.rows:
+                val = int(float(row.metric_values[0].value))
+                pct = round(val / total_age * 100) if total_age > 0 else 0
+                age_list.append({"label": row.dimension_values[0].value, "value": pct})
+        except Exception as e:
+            print(f"[GA4Client] Fetch age failed: {e}")
+
+        try:
+            # 2. 性別
+            req_gender = RunReportRequest(
+                property=self.property_id,
+                date_ranges=[DateRange(start_date=start_date, end_date=end_date)],
+                metrics=[Metric(name="sessions")],
+                dimensions=[Dimension(name="userGender")],
+                order_bys=[OrderBy(metric=OrderBy.MetricOrderBy(metric_name="sessions"), desc=True)]
+            )
+            resp_gender = self.client.run_report(req_gender)
+            total_gender = sum(int(float(r.metric_values[0].value)) for r in resp_gender.rows)
+            for row in resp_gender.rows:
+                val = int(float(row.metric_values[0].value))
+                pct = round(val / total_gender * 100) if total_gender > 0 else 0
+                gender_list.append({"label": row.dimension_values[0].value, "value": pct})
+        except Exception as e:
+            print(f"[GA4Client] Fetch gender failed: {e}")
+
+        try:
+            # 3. 城市
+            req_city = RunReportRequest(
+                property=self.property_id,
+                date_ranges=[DateRange(start_date=start_date, end_date=end_date)],
+                metrics=[Metric(name="sessions")],
+                dimensions=[Dimension(name="city")],
+                order_bys=[OrderBy(metric=OrderBy.MetricOrderBy(metric_name="sessions"), desc=True)],
+                limit=5
+            )
+            resp_city = self.client.run_report(req_city)
+            total_city = sum(int(float(r.metric_values[0].value)) for r in resp_city.rows)
+            for row in resp_city.rows:
+                val = int(float(row.metric_values[0].value))
+                pct = round(val / total_city * 100) if total_city > 0 else 0
+                city_list.append({"label": row.dimension_values[0].value, "value": pct})
+        except Exception as e:
+            print(f"[GA4Client] Fetch cities failed: {e}")
+
+        return {"age": age_list, "gender": gender_list, "cities": city_list}
+
     # ── 工具函式 ─────────────────────────────────────
     @staticmethod
     def _fmt_duration(seconds: float) -> str:

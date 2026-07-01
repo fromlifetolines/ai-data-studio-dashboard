@@ -6,9 +6,16 @@ PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 echo "🚀 啟動 AI Data Studio..."
 echo ""
 
-# 關閉舊的伺服器（若有）
-pkill -f "uvicorn main:app" 2>/dev/null
-pkill -f "http.server 8080" 2>/dev/null
+# 關閉佔用 Port 8000 與 8080 的舊伺服器（若有）
+LSOF_8000=$(lsof -t -i:8000)
+if [ ! -z "$LSOF_8000" ]; then
+  kill -9 $LSOF_8000 2>/dev/null
+fi
+
+LSOF_8080=$(lsof -t -i:8080)
+if [ ! -z "$LSOF_8080" ]; then
+  kill -9 $LSOF_8080 2>/dev/null
+fi
 sleep 1
 
 # 啟動後端 FastAPI (port 8000)

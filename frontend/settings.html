@@ -235,6 +235,10 @@
       <div class="ps-circle">5</div>
       <div class="ps-label">AI 分析</div>
     </div>
+    <div class="progress-step" id="ps-comp">
+      <div class="ps-circle">6</div>
+      <div class="ps-label">市場與競品</div>
+    </div>
   </div>
 
 
@@ -494,11 +498,10 @@
       <div class="step-instruction">
         <strong style="font-size:11px;display:block;margin-bottom:6px">📋 如何取得以下資訊（這是最複雜的步驟，約 10 分鐘）</strong>
         <ol>
-          <li>前往 <a href="https://business.facebook.com" target="_blank">business.facebook.com</a> → 「設定」→「廣告帳號」</li>
-          <li>複製你的<strong>廣告帳號 ID</strong>（格式：act_XXXXXXXXXXXXXXX）</li>
-          <li>「設定」→「系統用戶」→「新增系統用戶」（角色：員工）</li>
-          <li>點擊「新增資產」→ 選擇你的廣告帳號 → 授予「廣告帳號分析師」權限</li>
-          <li>點擊「產生新 Token」→ 選擇 App → 勾選「ads_read」權限 → 複製 Token</li>
+          <li>前往 <a href="https://business.facebook.com" target="_blank">business.facebook.com</a> → 「設定」→「廣告帳號」取得<strong>廣告帳號 ID</strong>。</li>
+          <li>「設定」→「系統用戶」→「新增系統用戶」（角色：員工）。</li>
+          <li>點擊「新增資產」→ 選擇你的廣告帳號 → 授予「廣告帳號分析師」權限。</li>
+          <li>點擊「產生新 Token」→ 選擇 App → <strong>重要！</strong>若要檢視「社群經營」成效，除了 `ads_read` 外，請務必同時勾選 `pages_read_engagement`、`pages_show_list`、`instagram_basic` 以及 `instagram_manage_insights` 權限 → 複製 Token。</li>
         </ol>
       </div>
 
@@ -518,6 +521,24 @@
           <input type="password" id="meta-token" placeholder="EAABxx...">
         </div>
         <div class="hint">Meta 系統用戶的長效存取權杖（Long-lived Access Token），有效期約 60 天需定期更新。</div>
+      </div>
+
+      <div class="field">
+        <label for="facebook-page-id">Facebook 粉絲專頁 ID <span class="optional-tag">選填</span></label>
+        <div class="input-wrap">
+          <i class="ti ti-brand-facebook" aria-hidden="true"></i>
+          <input type="text" id="facebook-page-id" placeholder="例如：100064567890123" class="no-icon" style="padding-left:10px;">
+        </div>
+        <div class="hint">用於「社群經營」分頁，可於粉專的「關於」頁面中找到。</div>
+      </div>
+
+      <div class="field">
+        <label for="instagram-business-id">Instagram 商業帳號 ID <span class="optional-tag">選填</span></label>
+        <div class="input-wrap">
+          <i class="ti ti-brand-instagram" aria-hidden="true"></i>
+          <input type="text" id="instagram-business-id" placeholder="例如：17841401234567890" class="no-icon" style="padding-left:10px;">
+        </div>
+        <div class="hint">用於「社群經營」分頁，需為已連結粉專的 IG 商業/創作者帳號。</div>
       </div>
 
       <div id="meta-status" style="display:none;margin-top:10px" class="status-msg"></div>
@@ -588,6 +609,80 @@
       <button class="validate-btn" onclick="saveAIKey()">
         <i class="ti ti-check" aria-hidden="true"></i> 儲存 AI 金鑰設定
       </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       STEP 6：市場與競品資源串接
+  ══════════════════════════════════════ -->
+  <div class="setup-section" id="sec-comp">
+    <div class="setup-section-head" onclick="toggleSection('sec-comp')">
+      <div class="section-icon" style="background:#FDF2F8"><i class="ti ti-chart-bar" style="color:#db2777" aria-hidden="true"></i></div>
+      <div class="section-info">
+        <div class="section-title">市場與競品分析資源 (Similarweb & SEMrush)</div>
+        <div class="section-sub">配置 Similarweb 與 SEMrush API Key 以抓取最精確公信力的網站流量與關鍵字競爭情報</div>
+      </div>
+      <div class="section-badge"><span class="badge badge-yellow" id="badge-comp">待設定</span></div>
+      <i class="ti ti-chevron-down section-chevron" aria-hidden="true"></i>
+    </div>
+
+    <div class="setup-section-body">
+      <!-- 競品分析免費兜底說明 -->
+      <div class="step-instruction" style="margin-top:14px; padding: 12px 14px; background: rgba(16, 185, 129, 0.05); border: 1px dashed rgba(16, 185, 129, 0.3); border-radius: var(--radius-md);">
+        <strong style="font-size:12px; display:block; margin-bottom:6px; color:#0f766e;">
+          💡 免費數據與商業 API 串接說明：
+        </strong>
+        <p style="font-size:11px; line-height:1.6; margin:0; color: var(--text-secondary);">
+          本模組支援多種數據獲取方式。由於 Similarweb 與 SEMrush API 屬於高昂付費服務，我們為您設計了以下方案：
+        </p>
+        <ul style="margin: 6px 0 0 0; padding-left: 18px; font-size: 11px; color: var(--text-secondary); line-height: 1.7;">
+          <li><span style="color:#0f766e; font-weight:700;">方案 A（完全免費 - 推薦 ⭐）</span>：若不希望額外付費，只要在上方<strong>「STEP 5」</strong>中配置了免費的 <strong>Google Gemini API Key</strong>，系統將自動啟動 <strong>Google Search Grounding (實時搜尋)</strong>，在數據抓取時免費檢索網路公開索引為您估算競品流量與關鍵字，<strong>下方金鑰可留空不填</strong>。</li>
+          <li><span style="color:#1d4ed8; font-weight:700;">方案 B（付費原廠 API）</span>：若您已訂閱 Similarweb/SEMrush 的 Developer 服務，請於下方填入 API 金鑰，系統將對接原廠官方 API 以獲取最精確的指標。</li>
+        </ul>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; margin-top:12px;">
+        
+        <!-- Similarweb Key -->
+        <div style="border: 1px solid var(--border-mid); border-radius: var(--radius-md); padding: 14px; background: var(--surface); box-sizing: border-box;">
+          <strong style="font-size:12px; display:block; margin-bottom:8px; color: var(--text-primary);">
+            <i class="ti ti-brand-chrome" style="color:#db2777"></i> Similarweb API Key
+          </strong>
+          <div class="step-instruction" style="margin-top:0; padding: 8px 10px;">
+            <ol style="margin: 0; padding-left: 14px;">
+              <li style="font-size:10px;">前往 <a href="https://www.similarweb.com/corp/developer/" target="_blank">Similarweb Developer 後台</a></li>
+              <li style="font-size:10px;">取得密鑰填入下方以對接真實月存取流量</li>
+            </ol>
+          </div>
+          <div class="field" style="margin-bottom:8px; margin-top:8px;">
+            <div class="input-wrap">
+              <i class="ti ti-key" aria-hidden="true"></i>
+              <input type="password" id="similarweb-key" placeholder="例如：similarweb_api_key_xxx" class="no-icon" style="padding-left:10px;">
+            </div>
+          </div>
+        </div>
+
+        <!-- SEMrush Key -->
+        <div style="border: 1px solid var(--border-mid); border-radius: var(--radius-md); padding: 14px; background: var(--surface); box-sizing: border-box;">
+          <strong style="font-size:12px; display:block; margin-bottom:8px; color: var(--text-primary);">
+            <i class="ti ti-search" style="color:var(--accent)"></i> SEMrush API Key
+          </strong>
+          <div class="step-instruction" style="margin-top:0; padding: 8px 10px;">
+            <ol style="margin: 0; padding-left: 14px;">
+              <li style="font-size:10px;">前往 <a href="https://www.semrush.com/api-documentation/" target="_blank">SEMrush API 官網</a></li>
+              <li style="font-size:10px;">取得 API Key 對接權威搜尋關鍵字庫與競價出價估算</li>
+            </ol>
+          </div>
+          <div class="field" style="margin-bottom:8px; margin-top:8px;">
+            <div class="input-wrap">
+              <i class="ti ti-key" aria-hidden="true"></i>
+              <input type="password" id="semrush-key" placeholder="例如：semrush_api_key_xxx" class="no-icon" style="padding-left:10px;">
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div id="comp-status" style="display:none;margin-top:10px" class="status-msg"></div>
     </div>
   </div>
 
@@ -864,13 +959,19 @@ async function validateGAds() {
   btn.innerHTML = '<i class="ti ti-plug" aria-hidden="true"></i> 驗證 Google Ads 連線';
 }
 
-// ── 驗證 Meta Ads ───────────────────────────
+// ── 驗證 Meta 連線 ───────────────────────────
 async function validateMeta() {
   const accountId = document.getElementById('meta-account-id').value.trim();
   const token = document.getElementById('meta-token').value.trim();
+  const fbPageId = document.getElementById('facebook-page-id').value.trim();
+  const igBusinessId = document.getElementById('instagram-business-id').value.trim();
 
-  if (!accountId || !token) {
-    showStatus('meta-status', 'error', '請填寫 Meta 廣告帳號 ID 與 Access Token');
+  if (!token) {
+    showStatus('meta-status', 'error', '請填寫 Meta Access Token');
+    return;
+  }
+  if (!accountId && !fbPageId && !igBusinessId) {
+    showStatus('meta-status', 'error', '請填寫廣告帳號 ID、FB 粉專 ID 或 IG 商業帳號 ID 至少一項');
     return;
   }
 
@@ -884,23 +985,25 @@ async function validateMeta() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         account_id: accountId,
-        token: token
+        token: token,
+        facebook_page_id: fbPageId,
+        instagram_business_id: igBusinessId
       })
     });
     const data = await res.json();
     if (res.ok) {
-      showStatus('meta-status', 'success', `✓ Meta Ads 連線成功！`);
+      showStatus('meta-status', 'success', `✓ ${data.message || '連線成功！'}`);
       document.getElementById('badge-meta').textContent = '✓ 已完成';
       document.getElementById('badge-meta').className = 'badge badge-green';
     } else {
-      showStatus('meta-status', 'error', data.detail || '連線失敗，請檢查 Token 與廣告帳號 ID');
+      showStatus('meta-status', 'error', data.detail || '連線失敗，請檢查輸入的欄位與 Token 權限');
     }
   } catch (e) {
     showStatus('meta-status', 'error', '無法連接到後端伺服器，請確認 FastAPI 是否已啟動');
   }
 
   btn.classList.remove('loading');
-  btn.innerHTML = '<i class="ti ti-plug" aria-hidden="true"></i> 驗證 Meta Ads 連線';
+  btn.innerHTML = '<i class="ti ti-plug" aria-hidden="true"></i> 驗證 Meta 連線';
 }
 
 // ── 儲存 AI Key ───────────────────────────────
@@ -974,9 +1077,14 @@ async function saveAll() {
   
   const metaId = document.getElementById('meta-account-id').value.trim();
   const metaToken = document.getElementById('meta-token').value.trim();
+  const fbPageId = document.getElementById('facebook-page-id').value.trim();
+  const igBusinessId = document.getElementById('instagram-business-id').value.trim();
   
   const aiKey   = document.getElementById('openai-key').value.trim();
   const geminiKey = document.getElementById('gemini-key').value.trim();
+  
+  const similarwebKey = document.getElementById('similarweb-key').value.trim();
+  const semrushKey = document.getElementById('semrush-key').value.trim();
 
   if (!propId) {
     alert('請輸入 GA4 Property ID！');
@@ -993,9 +1101,11 @@ async function saveAll() {
     if (propId)  body.ga4 = { property_id: propId, credentials_json: jsonStr || null };
     if (gscUrl)             body.gsc = { site_url: gscUrl };
     if (gadsId)             body.gads = { customer_id: gadsId, developer_token: gadsDev, client_id: gadsClient, client_secret: gadsSecret, refresh_token: gadsRefresh };
-    if (metaId)             body.meta = { account_id: metaId, token: metaToken };
+    if (metaId || fbPageId || igBusinessId) body.meta = { account_id: metaId, token: metaToken, facebook_page_id: fbPageId, instagram_business_id: igBusinessId };
     if (aiKey)              body.openai_key = aiKey;
     if (geminiKey)          body.gemini_key = geminiKey;
+    body.similarweb_key = similarwebKey;
+    body.semrush_key = semrushKey;
 
     const res = await fetch(`${API_BASE}/api/settings/save`, {
       method: 'POST',
@@ -1068,6 +1178,8 @@ async function loadCurrentSettings() {
 
   document.getElementById('meta-account-id').value = '';
   document.getElementById('meta-token').value = '';
+  document.getElementById('facebook-page-id').value = '';
+  document.getElementById('instagram-business-id').value = '';
   const badgeMeta = document.getElementById('badge-meta');
   if (badgeMeta) {
     badgeMeta.textContent = '待完成';
@@ -1087,6 +1199,17 @@ async function loadCurrentSettings() {
   if (aiStatusEl) {
     aiStatusEl.style.display = 'none';
     aiStatusEl.innerHTML = '';
+  }
+
+  // Reset Competitor settings fields
+  document.getElementById('similarweb-key').value = '';
+  document.getElementById('semrush-key').value = '';
+  document.getElementById('badge-comp').textContent = '待設定';
+  document.getElementById('badge-comp').className = 'badge badge-yellow';
+  const compStatusEl = document.getElementById('comp-status');
+  if (compStatusEl) {
+    compStatusEl.style.display = 'none';
+    compStatusEl.innerHTML = '';
   }
 
   // 2. 向後端讀取作用中專案的設定
@@ -1131,15 +1254,20 @@ async function loadCurrentSettings() {
       }
       showStatus('gads-status', 'success', `✓ Google Ads 連線成功！客戶 ID: ${s.gads_customer_id}`);
     }
-    if (s.meta_account_id) {
-      document.getElementById('meta-account-id').value = s.meta_account_id;
+    if (s.meta_account_id || s.facebook_page_id || s.instagram_business_id) {
+      document.getElementById('meta-account-id').value = s.meta_account_id || '';
       document.getElementById('meta-token').value = s.meta_token || '';
+      document.getElementById('facebook-page-id').value = s.facebook_page_id || '';
+      document.getElementById('instagram-business-id').value = s.instagram_business_id || '';
       
       if (badgeMeta) {
         badgeMeta.textContent = '✓ 已完成';
         badgeMeta.className = 'badge badge-green';
       }
-      showStatus('meta-status', 'success', `✓ Meta Ads 連線成功！帳戶 ID: ${s.meta_account_id}`);
+      const showMsg = s.meta_account_id 
+        ? `✓ Meta Ads 連線成功！帳戶 ID: ${s.meta_account_id}`
+        : `✓ Meta 社群串接成功！`;
+      showStatus('meta-status', 'success', showMsg);
     }
     if (s.gemini_key) {
       document.getElementById('gemini-key').value = s.gemini_key;
@@ -1148,6 +1276,18 @@ async function loadCurrentSettings() {
       document.getElementById('badge-ai').textContent = '✓ 已完成';
       document.getElementById('badge-ai').className = 'badge badge-green';
       showStatus('ai-status', 'success', '✓ AI 連線與金鑰設定成功！');
+    }
+
+    // Populate Competitor Keys
+    if (s.similarweb_key) {
+      document.getElementById('similarweb-key').value = s.similarweb_key;
+    }
+    if (s.semrush_key) {
+      document.getElementById('semrush-key').value = s.semrush_key;
+    }
+    if (s.similarweb_key || s.semrush_key) {
+      document.getElementById('badge-comp').textContent = '✓ 已完成';
+      document.getElementById('badge-comp').className = 'badge badge-green';
     }
 
     // 更新進度步驟 (Stepper) 的顯示狀態
@@ -1331,6 +1471,18 @@ function updateStepperStatus(s) {
     } else {
       stepAi.classList.remove('done');
       stepAi.querySelector('.ps-circle').innerHTML = '5';
+    }
+  }
+
+  // Step 6: 市場與競品
+  const stepComp = document.getElementById('ps-comp');
+  if (stepComp) {
+    if (s.similarweb_key || s.semrush_key || s.gemini_configured) {
+      stepComp.classList.add('done');
+      stepComp.querySelector('.ps-circle').innerHTML = '<i class="ti ti-check" style="font-size:12px"></i>';
+    } else {
+      stepComp.classList.remove('done');
+      stepComp.querySelector('.ps-circle').innerHTML = '6';
     }
   }
 }
