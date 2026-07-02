@@ -1540,3 +1540,236 @@ canvas { display: block; }
 }
 
 
+/* ══════════════════════════════════════════════════════
+   SEO Intelligence (Page 8) 專用樣式
+══════════════════════════════════════════════════════ */
+
+/* Sub-tab 切換按鈕 */
+.seo-sub-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1px solid var(--border-mid);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.seo-sub-tab:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(124, 58, 237, 0.04);
+}
+
+.seo-sub-tab.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+}
+
+/* PageSpeed 評分圓圈 */
+.ps-score-ring {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px;
+}
+
+.ps-score-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  border: 3px solid;
+}
+
+.ps-score-circle.good    { border-color: #10b981; color: #10b981; }
+.ps-score-circle.average { border-color: #f59e0b; color: #f59e0b; }
+.ps-score-circle.poor    { border-color: #ef4444; color: #ef4444; }
+
+.ps-score-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* CWV 指標卡 */
+.cwv-card {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  text-align: center;
+}
+
+.cwv-card .cwv-value {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.cwv-card .cwv-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.cwv-card .cwv-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cwv-badge.good    { background: rgba(16,185,129,0.12); color: #10b981; }
+.cwv-badge.needs-improvement { background: rgba(245,158,11,0.12); color: #f59e0b; }
+.cwv-badge.poor    { background: rgba(239,68,68,0.12); color: #ef4444; }
+.cwv-badge.unknown { background: rgba(100,116,139,0.1); color: var(--muted); }
+
+/* 排名位置徽章 */
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.rank-badge.top3  { background: rgba(16,185,129,0.12); color: #10b981; }
+.rank-badge.top10 { background: rgba(37,99,235,0.12);  color: #2563eb; }
+.rank-badge.top30 { background: rgba(245,158,11,0.12); color: #f59e0b; }
+.rank-badge.others { background: rgba(100,116,139,0.1); color: var(--muted); }
+
+/* 競爭難度進度條 */
+.difficulty-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.difficulty-bar {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.difficulty-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+/* 旋轉 loading 動畫 */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Keyword gap 卡 */
+.kw-gap-card {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  background: rgba(16,185,129,0.03);
+  border-left: 3px solid #10b981;
+}
+
+/* 競品對比卡 */
+.comp-stat {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.comp-stat-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+/* AI 行動決策指南 */
+.action-roadmap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  padding: 16px;
+}
+
+.roadmap-card {
+  padding: 16px;
+  border-radius: var(--radius-md);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.roadmap-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.05);
+}
+
+.roadmap-card.short-term {
+  background: var(--danger-light);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+}
+.roadmap-card.medium-term {
+  background: var(--accent-light);
+  border: 1px solid rgba(124, 58, 237, 0.15);
+}
+.roadmap-card.long-term {
+  background: var(--success-light);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+}
+
+.roadmap-header {
+  margin-bottom: 12px;
+}
+
+.roadmap-badge {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.roadmap-badge.badge-short {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--danger);
+}
+
+.roadmap-badge.badge-medium {
+  background: rgba(124, 58, 237, 0.15);
+  color: var(--accent);
+}
+
+.roadmap-badge.badge-long {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success);
+}
+
+.roadmap-card p {
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0;
+}

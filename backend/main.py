@@ -1964,7 +1964,206 @@ async def download_report(project_id: str):
     )
 
 
+# ══════════════════════════════════════════════════════
+# SEO Intelligence API（Page 8）
+# ══════════════════════════════════════════════════════
+
+import seo_intelligence
+
+class SEOKeywordResearchRequest(BaseModel):
+    keyword: str
+    site_url: Optional[str] = ""
+
+class SEOCompetitorRequest(BaseModel):
+    my_domain: str
+    competitor_domain: str
+
+class SEOAuditRequest(BaseModel):
+    url: str
+
+class SEOBacklinkRequest(BaseModel):
+    domains: list[str]
+
+@app.post("/api/seo/keyword-research")
+async def seo_keyword_research(req: SEOKeywordResearchRequest):
+    """
+    關鍵字研究：使用 Gemini Grounding (Google 搜尋即時資料) 分析關鍵字。
+    完全免費，需要 Gemini API Key（已在設定中填入）。
+    """
+    settings = load_settings()
+    gemini_key = settings.get("gemini_key") or os.getenv("GEMINI_API_KEY", "")
+
+    if not gemini_key:
+        raise HTTPException(status_code=400, detail="請先在設定頁面填入 Gemini API Key 以啟用關鍵字研究功能。")
+
+    if not req.keyword or not req.keyword.strip():
+        raise HTTPException(status_code=400, detail="請輸入要研究的關鍵字。")
+
+    site_url = req.site_url or settings.get("gsc_site_url", "")
+
+    try:
+        check_and_increment_gemini_quota()
+        result = await asyncio.to_thread(
+            seo_intelligence.keyword_research_gemini,
+            req.keyword.strip(),
+            site_url,
+            gemini_key
+        )
+        return {"status": "ok", "data": result}
+    except ValueError as e:
+        raise HTTPException(status_code=429, detail=str(e))
+    except Exception as e:
+        err_msg = str(e)
+        if "429" in err_msg or "quota" in err_msg.lower() or "limit" in err_msg.lower() or "exhausted" in err_msg.lower():
+            raise HTTPException(
+                status_code=429,
+                detail="⚠️ 您的 Gemini API 金鑰已超出呼叫限制或今日免費额度已耗盡 (429 Quota Exceeded)。請在設定頁面更換 API 金鑰，或稍候再重試。"
+            )
+        raise HTTPException(status_code=500, detail=f"關鍵字研究失敗：{err_msg}")
+
+
+
+@app.post("/api/seo/site-audit")
+async def seo_site_audit(req: SEOAuditRequest):
+    """
+    網站健檢：整合 Google PageSpeed Insights + 現有 seo_evaluator。
+    PageSpeed Insights 完全免費，無需 API Key。
+    """
+    if not req.url or not req.url.strip():
+        raise HTTPException(status_code=400, detail="請輸入要健檢的網站網址。")
+
+    url = req.url.strip()
+    if not url.startswith("http://") and not url.startswith("https://"):
+        url = "https://" + url
+
+    try:
+        settings = load_settings()
+        gemini_key = settings.get("gemini_key") or os.getenv("GEMINI_API_KEY", "")
+
+        # 並行執行 PageSpeed + 技術 SEO 評測
+        pagespeed_task = asyncio.to_thread(seo_intelligence.get_pagespeed_data, url)
+        seo_eval_task = asyncio.to_thread(seo_evaluator.run_full_evaluation, url, gemini_key)
+
+
+        pagespeed_result, seo_eval_result = await asyncio.gather(pagespeed_task, seo_eval_task, return_exceptions=True)
+
+        if isinstance(pagespeed_result, Exception):
+            print(f"[PageSpeed Error] {pagespeed_result}")
+            pagespeed_result = {"mobile": {}, "desktop": {}}
+
+        if isinstance(seo_eval_result, Exception):
+            print(f"[SEO Eval Error] {seo_eval_result}")
+            seo_eval_result = {}
+
+        return {
+            "status": "ok",
+            "url": url,
+            "pagespeed": pagespeed_result,
+            "technical_seo": seo_eval_result
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"網站健檢失敗：{str(e)}")
+
+
+@app.post("/api/seo/rank-tracker")
+async def seo_rank_tracker(
+    start_date: str = "30daysAgo",
+    end_date: str = "today"
+):
+    """
+    排名追蹤：從已串接的 Google Search Console 取得真實關鍵字排名。
+    完全免費，使用真實 GSC 數據。
+    """
+    settings = load_settings()
+    cred_path = get_credentials_path()
+    auth_status_data = oauth_manager.get_auth_status()
+    oauth_ok = auth_status_data["authenticated"]
+    oauth_creds = oauth_manager.get_credentials() if oauth_ok else None
+
+    has_gsc = bool(settings.get("gsc_site_url")) and (oauth_ok or cred_path is not None)
+
+    if not has_gsc:
+        raise HTTPException(
+            status_code=400,
+            detail="請先在設定頁面完成 Google Search Console 串接，才能使用排名追蹤功能。"
+        )
+
+    gsc_client = None
+    try:
+        if oauth_ok and oauth_creds:
+            gsc_client = GSCClient(site_url=settings["gsc_site_url"], oauth_credentials=oauth_creds)
+        elif cred_path:
+            gsc_client = GSCClient(site_url=settings["gsc_site_url"], credentials_path=str(cred_path))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"無法建立 GSC 連線：{str(e)}")
+
+    try:
+        # 取得最多 200 個關鍵字
+        raw_kws = await asyncio.to_thread(
+            gsc_client.query_search_analytics,
+            start_date, end_date,
+            ["query"],
+            200
+        )
+        result = seo_intelligence.format_gsc_rank_tracker(raw_kws)
+        return {"status": "ok", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"排名追蹤數據拉取失敗：{str(e)}")
+
+
+@app.post("/api/seo/competitor-analysis")
+async def seo_competitor_analysis(req: SEOCompetitorRequest):
+    """
+    競爭對手 SEO 分析：使用 Gemini Grounding 分析競爭對手的 SEO 表現。
+    完全免費，需要 Gemini API Key。
+    """
+    settings = load_settings()
+    gemini_key = settings.get("gemini_key") or os.getenv("GEMINI_API_KEY", "")
+
+    if not gemini_key:
+        raise HTTPException(status_code=400, detail="請先設定 Gemini API Key 以啟用競品 SEO 分析。")
+
+    if not req.my_domain or not req.competitor_domain:
+        raise HTTPException(status_code=400, detail="請填入我方域名與競品域名。")
+
+    try:
+        check_and_increment_gemini_quota()
+        result = await asyncio.to_thread(
+            seo_intelligence.competitor_seo_analysis_gemini,
+            req.my_domain.strip(),
+            req.competitor_domain.strip(),
+            gemini_key
+        )
+        return {"status": "ok", "data": result}
+    except ValueError as e:
+        raise HTTPException(status_code=429, detail=str(e))
+    except Exception as e:
+        err_msg = str(e)
+        if "429" in err_msg or "quota" in err_msg.lower() or "limit" in err_msg.lower() or "exhausted" in err_msg.lower():
+            raise HTTPException(
+                status_code=429,
+                detail="⚠️ 您的 Gemini API 金鑰已超出呼叫限制或今日免費额度已耗盡 (429 Quota Exceeded)。請在設定頁面更換 API 金鑰，或稍候再重試。"
+            )
+        raise HTTPException(status_code=500, detail=f"競品分析失敗：{err_msg}")
+
+
+
+@app.post("/api/seo/domain-authority")
+async def seo_domain_authority(req: SEOBacklinkRequest):
+    """
+    域名權威評分：使用 Open PageRank API（免費，基於 Common Crawl）取得域名評分。
+    完全免費，無需 API Key。
+    """
+    if not req.domains:
+        raise HTTPException(status_code=400, detail="請至少填入一個域名。")
+
+    try:
+        result = await asyncio.to_thread(seo_intelligence.get_open_pagerank, req.domains)
+        return {"status": "ok", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"域名評分查詢失敗：{str(e)}")
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
-
