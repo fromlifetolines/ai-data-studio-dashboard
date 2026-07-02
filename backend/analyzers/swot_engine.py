@@ -10,6 +10,42 @@ def generate_swot_analysis(project_id: str, matrix_data: list, gemini_key: str =
     Generate SWOT analysis based on competitor matrix. Use Gemini if key is provided,
     otherwise build structured business analyst heuristics.
     """
+    # ── 1. 優先檢查快取，若未過期則直接使用 ──
+    try:
+        with get_db_connection() as conn:
+            cache = conn.execute(
+                "SELECT content, generated_at FROM ai_analyses WHERE project_id = ? AND analysis_type = 'swot'",
+                (project_id,)
+            ).fetchone()
+            
+            if cache:
+                latest_snapshot = conn.execute(
+                    """
+                    SELECT MAX(fetched_at) as max_time FROM (
+                        SELECT MAX(fetched_at) as fetched_at FROM traffic_snapshots ts 
+                        JOIN competitors c ON ts.competitor_id = c.id WHERE c.project_id = ?
+                        UNION ALL
+                        SELECT MAX(fetched_at) as fetched_at FROM seo_snapshots ss 
+                        JOIN competitors c ON ss.competitor_id = c.id WHERE c.project_id = ?
+                        UNION ALL
+                        SELECT MAX(fetched_at) as fetched_at FROM social_snapshots sos 
+                        JOIN competitors c ON sos.competitor_id = c.id WHERE c.project_id = ?
+                    )
+                    """,
+                    (project_id, project_id, project_id)
+                ).fetchone()
+                
+                max_snapshot_time = latest_snapshot["max_time"] if latest_snapshot else None
+                cache_time = cache["generated_at"]
+                
+                if not max_snapshot_time or cache_time >= max_snapshot_time:
+                    logger.info("Using cached SWOT analysis")
+                    return json.loads(cache["content"])
+                else:
+                    logger.info("SWOT cache is stale, will regenerate")
+    except Exception as e:
+        logger.error(f"Error reading/verifying SWOT cache: {e}")
+
     # Find our company
     own = next((c for c in matrix_data if c["is_own_company"]), None)
     if not own and matrix_data:
@@ -40,7 +76,7 @@ def generate_swot_analysis(project_id: str, matrix_data: list, gemini_key: str =
     
     請產出 SWOT 分析（Strengths 優勢, Weaknesses 劣勢, Opportunities 機會, Threats 威脅），每個維度各提供 3-4 個具體、有憑有據、可執行的商業條目。
     
-    請嚴格以下列 JSON 格式回傳，不要加任何 markdown 標記 (如 ```json) 以外的說明字串：
+    請嚴格以下列 JSON 格式回傳，不要加 any markdown 標記 (如 ```json) 以外的說明字串：
     {{
         "strengths": ["優勢條目1", "優勢條目2", "優勢條目3"],
         "weaknesses": ["劣勢條目1", "劣勢條目2", "劣勢條目3"],
@@ -65,18 +101,6 @@ def generate_swot_analysis(project_id: str, matrix_data: list, gemini_key: str =
             return data
         except Exception as e:
             logger.error(f"Error generating SWOT via Gemini: {e}")
-            
-    # Try reading from cache first
-    try:
-        with get_db_connection() as conn:
-            cache = conn.execute(
-                "SELECT content FROM ai_analyses WHERE project_id = ? AND analysis_type = 'swot'",
-                (project_id,)
-            ).fetchone()
-            if cache:
-                return json.loads(cache["content"])
-    except Exception as e:
-        logger.error(f"Error reading SWOT cache: {e}")
 
     # Fallback/Heuristics SWOT based on metrics
     logger.info("Generating SWOT using local analytical heuristics")

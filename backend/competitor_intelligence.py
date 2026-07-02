@@ -37,7 +37,7 @@ async def fetch_competitor_snapshot(
     await asyncio.sleep(4.0)
     semrush = await fetch_semrush_data(domain, semrush_key, gemini_key)
     await asyncio.sleep(4.0)
-    social = await fetch_social_data(domain, name)
+    social = await fetch_social_data(domain, name, gemini_key)
     await asyncio.sleep(4.0)
     geo = await check_geo_visibility(name, industry, gemini_key)
     

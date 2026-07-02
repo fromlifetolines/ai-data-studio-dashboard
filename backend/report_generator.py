@@ -14,10 +14,11 @@ def generate_markdown_report(project_id: str, project_name: str, gemini_key: str
     swot = generate_swot_analysis(project_id, matrix, gemini_key)
     porter = evaluate_porter_forces(project_id, matrix)
     
-    # 1. Title & Header
+    from datetime import datetime
+    today_str = datetime.now().strftime("%Y-%m-%d")
     md = f"""# 市場與競品情報分析報告 — {project_name}
     
-報告生成時間：2026-06-29
+報告生成時間：{today_str}
 分析架構：市場競爭矩陣、SWOT 策略分析、波特五力雷達、AI 行動指南
 
 ---
